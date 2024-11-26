@@ -3,9 +3,9 @@ Contributors: wpninjasllc, kstover, jameslaws, kbjohnson90, klhall1987, krmoorho
 Tags: forms, form builder, contact form, lead form, registration form
 
 
-Requires at least: 6.4
-Tested up to: 6.6.2
-Stable tag: 3.8.19
+Requires at least: 6.5
+Tested up to: 6.7
+Stable tag: 3.8.20
 
 Requires PHP: 7.4
 
@@ -312,18 +312,15 @@ This section describes how to install the plugin and get it working.
 5. Beautiful Forms Every Time!
 
 == Upgrade Notice ==
-= 3.8.19 (18 November 2024) =
+= 3.8.20 (26 November 2024) =
 *Bug Fixes:*
-- Remove legacy duplicate field cleanup from render loop
-- Convert HTML encoded characters on submissions page
-- Verify we are on an nf_sub post type before loading terms list
-
-*Other:*
-- Add behavioural telemetry data
-- Add diagnost information to system status
-- Update end-to-end test
+- Sanitize calculations input
 
 == Changelog ==
+= 3.8.20 (26 November 2024) =
+*Bug Fixes:*
+- Sanitize calculations input
+
 = 3.8.19 (18 November 2024) =
 *Bug Fixes:*
 - Remove legacy duplicate field cleanup from render loop
