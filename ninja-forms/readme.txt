@@ -5,7 +5,7 @@ Tags: forms, form builder, contact form, lead form, registration form
 
 Requires at least: 6.5
 Tested up to: 6.7
-Stable tag: 3.8.23
+Stable tag: 3.8.24
 
 Requires PHP: 7.4
 
@@ -312,11 +312,17 @@ This section describes how to install the plugin and get it working.
 5. Beautiful Forms Every Time!
 
 == Upgrade Notice ==
-= 3.8.23 (16 December 2024)
+= 3.8.24 (21 January 2025)
 *Bug Fixes:*
-- Ensure only permitted form previews are available to a given user
+- Fixed an accessibility issue related to text contrast when using opinionated styles.
+- Fixed accessibility errors related to missing field descriptions.
 
 == Changelog ==
+= 3.8.24 (21 January 2025)
+*Bug Fixes:*
+- Fixed an accessibility issue related to text contrast when using opinionated styles.
+- Fixed accessibility errors related to missing field descriptions.
+
 = 3.8.23 (16 December 2024)
 *Bug Fixes:*
 - Ensure only permitted form previews are available to a given user
