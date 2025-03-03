@@ -4,7 +4,7 @@ Tags: forms, form builder, contact form, lead form, registration form
 
 Requires at least: 6.5
 Tested up to: 6.7
-Stable tag: 3.9.0
+Stable tag: 3.9.1
 
 Requires PHP: 7.4
 
@@ -311,15 +311,31 @@ This section describes how to install the plugin and get it working.
 5. Beautiful Forms Every Time!
 
 == Upgrade Notice ==
-= 3.9.0 (10 February 2025) =
+= 3.9.1 (24 February 2025) =
 *Features:*
-- New user onboarding
-- Add delete forms WP-CLI command
+- Allows repeatable fieldsets to be editable in the Submissions page.
+
+*Bug Fixes:*
+- Numbers over 10 billion no longer cause validation errors.
 
 *Other:*
-- JS library updates
+- Add add-on communication status logs to the System Status page.
+- Add additional data points for telemetry.
+- Update build files.
 
 == Changelog ==
+= 3.9.1 (24 February 2025) =
+*Features:*
+- Allows repeatable fieldsets to be editable in the Submissions page.
+
+*Bug Fixes:*
+- Numbers over 10 billion no longer cause validation errors.
+
+*Other:*
+- Add add-on communication status logs to the System Status page.
+- Add additional data points for telemetry.
+- Build file updates.
+
 = 3.9.0 (10 February 2025) =
 *Features:*
 - New user onboarding
