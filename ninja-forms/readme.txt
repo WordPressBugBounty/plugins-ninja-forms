@@ -1,10 +1,10 @@
 === Ninja Forms - The Contact Form Builder That Grows With You ===
-Contributors: wpninjasllc, kstover, jameslaws, kbjohnson90, klhall1987, krmoorhouse, jmcelhaney, wpnzach, ericwindhamsd
+Contributors: wpninjasllc, kstover, jameslaws, kbjohnson90, klhall1987, krmoorhouse, jmcelhaney, wpnzach, ericwindhamsd, mrpritchett
 Tags: forms, form builder, contact form, lead form, registration form
 
 Requires at least: 6.5
-Tested up to: 6.7
-Stable tag: 3.10.1
+Tested up to: 6.8
+Stable tag: 3.10.2
 
 Requires PHP: 7.4
 
@@ -15,9 +15,9 @@ The 100% beginner friendly WordPress form builder. Drag & drop form fields to bu
 == Description ==
 
 = Forms that grow with your business =
-As one of WordPress’ oldest form builders, we’re proud to serve users from around the world, from all walks of life, and from different stages of online growth. From the small businesses and local nonprofits that make up the core Ninja Forms user base to universities, hospitals, and even Fortune 500 companies, we’ll scale with you from startup to wherever you’re aiming for. 
+As one of WordPress’ oldest form builders, we’re proud to serve users from around the world, from all walks of life, and from different stages of online growth. From the small businesses and local nonprofits that make up the core Ninja Forms user base to universities, hospitals, and even Fortune 500 companies, we’ll scale with you from startup to wherever you’re aiming for.
 
-We’re committed to offering as many free, open source tools as we can get away with to back you up in the extremely price-conscious early days. As you grow, pick and choose only the premium features you need as you need them. We’ll grow with you from there for as far as you want to take us. 
+We’re committed to offering as many free, open source tools as we can get away with to back you up in the extremely price-conscious early days. As you grow, pick and choose only the premium features you need as you need them. We’ll grow with you from there for as far as you want to take us.
 
 We’re also committed to respecting your privacy and time. No unsolicited emails or aggressive marketing. No paywalling basic features or scraping private data. We offer a fully staffed team of support experts and a comprehensive library of plugin documentation for all users, free and paid, to help keep you collecting the submissions that move your business forward.
 
@@ -53,7 +53,7 @@ When you’re starting out, even little expenses add up quickly. That’s why Ni
 **Submission Management Features**
 - Unlimited FREE submissions
 - Configurable submissions display
-- Search and filter by field 
+- Search and filter by field
 - Search and filter by submitted value
 - Search and filter by submission date
 - Edit submitted values
@@ -104,9 +104,9 @@ When you’re starting out, even little expenses add up quickly. That’s why Ni
 
 = Pick and choose just what you need as you need it =
 
-As you start to grow, so does what you need out of your forms. But there’s no need to dive into the deep end right away and spend more than is practical. All premium features are contained in add-ons to the core form builder and can be purchased independently. When you find yourself wanting just one or two things, you can grab just what you need without paying for extras. 
+As you start to grow, so does what you need out of your forms. But there’s no need to dive into the deep end right away and spend more than is practical. All premium features are contained in add-ons to the core form builder and can be purchased independently. When you find yourself wanting just one or two things, you can grab just what you need without paying for extras.
 
-When you’re ready for more, our [membership plans](https://ninjaforms.com/pricing/?utm_source=WordPress.org&utm_medium=Plugin+readme&utm_campaign=Feature+List&utm_content=Pricing) bundle popular features together in budget friendly packages. 
+When you’re ready for more, our [membership plans](https://ninjaforms.com/pricing/?utm_source=WordPress.org&utm_medium=Plugin+readme&utm_campaign=Feature+List&utm_content=Pricing) bundle popular features together in budget friendly packages.
 
 Select from 40+ add-ons across multiple categories:
 
@@ -184,7 +184,7 @@ The sky’s the limit on what you can build with add-on features, but here are s
 
 == Notes ==
 
-We've been standing by our product and our users for over a decade, working to make your experience the best it can be. We're one of the only form builders around that offers support for all users, whether you've made a purchase or not. 
+We've been standing by our product and our users for over a decade, working to make your experience the best it can be. We're one of the only form builders around that offers support for all users, whether you've made a purchase or not.
 
 If you have any questions or suggestions, we’re always happy to hear from you. We have a dedicated support team with team members that span four continents standing by to help with technical questions every Monday to Friday. General feedback is always welcome too. It’s a big part of how we figure out what to do next, so chime in any time!
 
@@ -197,7 +197,7 @@ Ninja Forms&reg; is a registered trademark of Saturday Drive INC. We are a WordP
 == Frequently Asked Questions ==
 
 = Do I have to pay to see my form submissions? =
-No, Ninja Forms does not paywall submissions. You can view, edit, export, and more from Ninja Forms > Submissions with the core, free plugin. No purchase necessary. 
+No, Ninja Forms does not paywall submissions. You can view, edit, export, and more from Ninja Forms > Submissions with the core, free plugin. No purchase necessary.
 
 = What free form fields are included in the form builder? =
 - Date/Time
@@ -236,7 +236,7 @@ Yes. All user submitted data is stored locally on your server only, unless you e
 
 = Is Ninja Forms HIPAA compliant? =
 
-Ninja Forms can be and is used on sites that require HIPAA compliance, but overall compliance depends on factors outside of the control of any WordPress form builder. 
+Ninja Forms can be and is used on sites that require HIPAA compliance, but overall compliance depends on factors outside of the control of any WordPress form builder.
 
 = Can I send email with Ninja Forms? =
 
@@ -292,7 +292,7 @@ Ninja Forms also integrates with 1,000+ other popular services through our Zapie
 
 = Can I import / export forms and fields with Ninja Forms? =
 
-Yes, both forms and custom fields (any field you customize and designate as a favorite field) can be exported and imported between sites. 
+Yes, both forms and custom fields (any field you customize and designate as a favorite field) can be exported and imported between sites.
 
 
 == Installation ==
@@ -311,11 +311,25 @@ This section describes how to install the plugin and get it working.
 5. Beautiful Forms Every Time!
 
 == Upgrade Notice ==
-= 3.10.1 (14 April 2025) =
+= 3.10.2 (June 18 2025) =
 *Bug Fixes:*
-- Prevent stored XSS in various fields
+- Fixes an issue with the help text for repeater fields.
+- Fixes an issue with form processing being slow on forms with many fields.
+- Fixes an issue with translations on the date picker field.
+- Fixes an issue with saving repeater fields on duplicated forms.
+- Fixes an issue with date/time field in repeatable fieldsets.
+- Fixes an issue with repeatable field help text.
 
 == Changelog ==
+= 3.10.2 (June 18 2025) =
+*Bug Fixes:*
+- Fixes an issue with the help text for repeater fields.
+- Fixes an issue with form processing being slow on forms with many fields.
+- Fixes an issue with translations on the date picker field.
+- Fixes an issue with saving repeater fields on duplicated forms.
+- Fixes an issue with date/time field in repeatable fieldsets.
+- Fixes an issue with repeatable field help text.
+
 = 3.10.1 (14 April 2025) =
 *Bug Fixes:*
 - Prevent stored XSS in various fields
@@ -430,16 +444,16 @@ This section describes how to install the plugin and get it working.
 
 = 3.8.13 (26 August 2024) =
 *Bug Fixes:*
-- Prevent mouse scroll wheel from updating currency masked fields - Issues 
-- Resolved an error where required field validation was not always firing properly on masked fields  
-- Correct list value tooltip styling error for Safari and Firefox 
-- A repeatable fieldset that has triggered a required error maintains the error when the repeatable fieldset is deleted 
-- First Repeated Fieldset's data is not captured when deleting one of the sets 
+- Prevent mouse scroll wheel from updating currency masked fields - Issues
+- Resolved an error where required field validation was not always firing properly on masked fields
+- Correct list value tooltip styling error for Safari and Firefox
+- A repeatable fieldset that has triggered a required error maintains the error when the repeatable fieldset is deleted
+- First Repeated Fieldset's data is not captured when deleting one of the sets
 - Ensure form displays in WP Bakery without needing to refresh page
 
 *Other:*
 - Correct deprecation warnings in SCSS files
-- Library updates: The updates affect the structure of the components - mounting and data flow - and the blocks and styling 
+- Library updates: The updates affect the structure of the components - mounting and data flow - and the blocks and styling
 - Set security resolution for Axios as a dependency of our dependencies
 - Reorganize cypress tests
 - Add unit tests
@@ -506,7 +520,7 @@ This section describes how to install the plugin and get it working.
 
 = 3.8.4 (28 May 2024) =
 *Bug Fixes:*
-- Ensure first name field populates only first, not full, name 
+- Ensure first name field populates only first, not full, name
 - Enable personally identifiable setting outside of dev mode
 - Add merge tags 'other' for random, year, month, day
 
@@ -650,7 +664,7 @@ This section describes how to install the plugin and get it working.
 = 3.6.27 (04 July 2023) =
 
 *Bug fixes:*
-* Use static call for class name for PHP 7 support 
+* Use static call for class name for PHP 7 support
 
 = 3.6.26 (04 July 2023) =
 
@@ -751,7 +765,7 @@ This section describes how to install the plugin and get it working.
   * Import buffer class to re-enable download as PDF
 *Other Enhancements:*
   * Add code coverage reporting
-  
+
 = 3.6.15 (10 January 2023) =
 *Bug Fixes:*
   * Resolves add-on manager fatal error
@@ -762,7 +776,7 @@ This section describes how to install the plugin and get it working.
 *Other Enhancements:*
   * Update 'tested to'
   * Set resolutions to prevent vulnerable child dependencies
-  
+
 = 3.6.14 (2 September 2022) =
 *Bug Fixes:*
   * Fixes an issue with trailing commas
