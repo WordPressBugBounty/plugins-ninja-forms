@@ -4,7 +4,7 @@ Tags: forms, form builder, contact form, lead form, registration form
 
 Requires at least: 6.5
 Tested up to: 6.8
-Stable tag: 3.10.2
+Stable tag: 3.10.2.1
 
 Requires PHP: 7.4
 
@@ -311,6 +311,19 @@ This section describes how to install the plugin and get it working.
 5. Beautiful Forms Every Time!
 
 == Upgrade Notice ==
+= 3.10.2.1 (June 19 2025) =
+*Bug Fixes:*
+- Fixes an issue with HelpText causing a collision on save with Conditional Logic add-on.
+- Fixes an issue with HelpText causing a collision on save with Stripe add-on.
+- Fixes an incorrect icon.
+
+== Changelog ==
+= 3.10.2.1 (June 19 2025) =
+*Bug Fixes:*
+- Fixes an issue with HelpText causing a collision on save with Conditional Logic add-on.
+- Fixes an issue with HelpText causing a collision on save with Stripe add-on.
+- Fixes an incorrect icon.
+
 = 3.10.2 (June 18 2025) =
 *Bug Fixes:*
 - Fixes an issue with the help text for repeater fields.
@@ -320,15 +333,8 @@ This section describes how to install the plugin and get it working.
 - Fixes an issue with date/time field in repeatable fieldsets.
 - Fixes an issue with repeatable field help text.
 
-== Changelog ==
-= 3.10.2 (June 18 2025) =
-*Bug Fixes:*
-- Fixes an issue with the help text for repeater fields.
-- Fixes an issue with form processing being slow on forms with many fields.
-- Fixes an issue with translations on the date picker field.
-- Fixes an issue with saving repeater fields on duplicated forms.
-- Fixes an issue with date/time field in repeatable fieldsets.
-- Fixes an issue with repeatable field help text.
+*Features:*
+- Improved drawer styles with a refreshed look.
 
 = 3.10.1 (14 April 2025) =
 *Bug Fixes:*
