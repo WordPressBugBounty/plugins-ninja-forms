@@ -4,7 +4,7 @@ Tags: forms, form builder, contact form, lead form, registration form
 
 Requires at least: 6.5
 Tested up to: 6.8
-Stable tag: 3.10.2.2
+Stable tag: 3.10.3
 
 Requires PHP: 7.4
 
@@ -311,17 +311,28 @@ This section describes how to install the plugin and get it working.
 5. Beautiful Forms Every Time!
 
 == Upgrade Notice ==
-= 3.10.2.2 (June 24 2025) =
-*Security Fixes:*
-- Prevent script tag injection into templates via block prefixes.
+= 3.10.3 (June 30 2025) =
+*Bug Fixes:*
+- Fixes rounding error for number fields.
+- Resolves a hang on save in certain circumstances.
+- Removes an unused uinstall hook method.
 
 *Misc:*
-- Concatenates the readme changelog to prevent going over the WP.org word limit.
+- Updates several npm dependencies.
 
 == Changelog ==
+= 3.10.3 (June 30 2025) =
+*Bug Fixes:*
+- Fixes rounding error for number fields.
+- Resolves a hang on save in certain circumstances.
+- Removes an unused uinstall hook method.
+
+*Misc:*
+- Updates several npm dependencies.
+
 = 3.10.2.2 (June 24 2025) =
 *Security Fixes:*
-- Prevent script tag injection into templates via block prefixes.
+- Prevent script tag injection into templates via block prefixes. Thanks to Asaf Mozes for responsibly reporting this security issue.
 
 *Misc:*
 - Concatenates the readme changelog to prevent going over the WP.org word limit.
