@@ -4,8 +4,7 @@ Tags: forms, form builder, contact form, lead form, registration form
 
 Requires at least: 6.5
 Tested up to: 6.8
-Stable tag: 3.10.3
-
+Stable tag: 3.10.4
 Requires PHP: 7.4
 
 License: GPLv2 or later
@@ -311,16 +310,19 @@ This section describes how to install the plugin and get it working.
 5. Beautiful Forms Every Time!
 
 == Upgrade Notice ==
-= 3.10.3 (June 30 2025) =
+= 3.10.4 (July 7 2025) =
 *Bug Fixes:*
-- Fixes rounding error for number fields.
-- Resolves a hang on save in certain circumstances.
-- Removes an unused uinstall hook method.
-
-*Misc:*
-- Updates several npm dependencies.
+- Fixes value issue with time_only date field.
+- Fixes issue with common value for date/time field in repeatable field sets.
+- Fixes incorrect value for single checkbox merge tags.
 
 == Changelog ==
+= 3.10.4 (July 7 2025) =
+*Bug Fixes:*
+- Fixes value issue with time_only date field.
+- Fixes issue with common value for date/time field in repeatable field sets.
+- Fixes incorrect value for single checkbox merge tags.
+
 = 3.10.3 (June 30 2025) =
 *Bug Fixes:*
 - Fixes rounding error for number fields.
