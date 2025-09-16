@@ -259,6 +259,7 @@ final class NF_Admin_Menus_Settings extends NF_Abstracts_Submenu
             'general' => Ninja_Forms()->config( 'PluginSettingsGeneral' ),
             'recaptcha' => Ninja_Forms()->config( 'PluginSettingsReCaptcha' ),
             'turnstile' => Ninja_Forms()->config( 'PluginSettingsTurnstile' ),
+            'hcaptcha' => Ninja_Forms()->config( 'PluginSettingsHcaptcha' ),
             'advanced' => Ninja_Forms()->config( 'PluginSettingsAdvanced' ),
         ));
     }
