@@ -1,10 +1,10 @@
 === Ninja Forms - The Contact Form Builder That Grows With You ===
-Contributors: wpninjasllc, kstover, jameslaws, kbjohnson90, klhall1987, krmoorhouse, jmcelhaney, wpnzach, ericwindhamsd, mrpritchett
+Contributors: wpninjasllc, kstover, jameslaws, kbjohnson90, klhall1987, krmoorhouse, jmcelhaney, wpnzach, ericwindhamsd, mrpritchett, stuartsequeira, nahuelmahe
 Tags: forms, form builder, contact form, lead form, registration form
 
-Requires at least: 6.6
-Tested up to: 6.8.2
-Stable tag: 3.12.1
+Requires at least: 6.7
+Tested up to: 6.9
+Stable tag: 3.14.1
 Requires PHP: 7.4
 
 License: GPLv2 or later
@@ -310,11 +310,88 @@ This section describes how to install the plugin and get it working.
 5. Beautiful Forms Every Time!
 
 == Upgrade Notice ==
-= 3.12.1 (September 22, 2025) =
+= 3.14.1 (2 February 2026) =
+
 *Bug Fixes:*
-- Ensure nonce use in download and telemetry
+
+- fix drawer close button not working after merge tag insertion
+- fix token visibility issue in submissions table block
+- remove tabindex from radio lists for accessibility compliance
+
+*Enhancements:*
+
+- replace Summernote with Quill.js for Rich Text Editor
+- improve star rating field accessibility sizing
+
+*Security Enhancements:*
+
+- protect against XSS in Success Message action
+- block merge tag injection in repeater field processing
+- harden blocks code against unauthorized access
 
 == Changelog ==
+= 3.14.1 (2 February 2026) =
+
+*Bug Fixes:*
+
+- fix drawer close button not working after merge tag insertion
+- fix token visibility issue in submissions table block
+- remove tabindex from radio lists for accessibility compliance
+
+*Enhancements:*
+
+- replace Summernote with Quill.js for Rich Text Editor
+- improve star rating field accessibility sizing
+
+*Security Enhancements:*
+
+- protect against XSS in Success Message action
+- block merge tag injection in repeater field processing
+- harden blocks code against unauthorized access
+
+= 3.14.0 (January 26, 2026) =
+* Features:*
+- Add support for Abilities API
+
+*Bug Fixes:*
+- Prevent loading CDN font per GDPR rules
+
+= 3.13.4 (January 14, 2026) =
+*Bug Fixes:*
+- Check visibility to prevent post spoofing
+
+= 3.13.3 (December 8, 2025) =
+*Bug Fixes:*
+- Limit submission token generation
+
+= 3.13.2 (November 25, 2025) =
+*Bug Fixes:*
+- Prevent unserialization of user submitted values
+
+= 3.13.1 (November 17, 2025) =
+*Bug Fixes:*
+- Ensure submission block token valid only for given page
+
+= 3.13.0 (October 27, 2025) =
+*Features:*
+- NEW Signature field
+
+*Bug Fixes:*
+- Ensure opt-in popup can be dismissed
+- Allow only ExtraDataHandlers into Submission metabox
+- Require form id as integer
+- Fix an accessibility issue with labels for HTML and Divider fields.
+
+= 3.12.2.1 (December 15, 2025) =
+*Bug Fixes:*
+- Limit submission token generation
+
+= 3.12.2 (October 6, 2025) =
+*Bug Fixes:*
+- fix undefined $outgoing
+- accessibility fix to set autocomplete
+- fix checkbox field calculation, was showing 0 when checked
+
 = 3.12.1 (September 22, 2025) =
 *Bug Fixes:*
 - Ensure nonce use in download and telemetry
@@ -325,6 +402,10 @@ This section describes how to install the plugin and get it working.
 
 *Bug Fixes:*
 - Ensure File Upload link in submissions table is clickable
+
+= 3.11.1.1 (December 15, 2025) =
+*Bug Fixes:*
+- Limit submission token generation
 
 = 3.11.1 (August 20, 2025) =
 *Bug Fixes:*
@@ -353,6 +434,10 @@ This section describes how to install the plugin and get it working.
 - Improves CSS build process with proper source map generation.
 - Adds comprehensive E2E tests for RTE settings and Turnstile integration.
 - Updates test folder structure for better organization.
+
+= 3.10.4.1 (December 15, 2025) =
+*Bug Fixes:*
+- Limit submission token generation
 
 = 3.10.4 (July 7 2025) =
 *Bug Fixes:*
@@ -407,6 +492,10 @@ This section describes how to install the plugin and get it working.
 - Fix an error related to File Uploads merge tags.
 - Required errors should no longer trigger on removed repeater sets.
 
+= 3.9.2.1 (December 15, 2025) =
+*Bug Fixes:*
+- Limit submission token generation
+
 = 3.9.2 (12 March 2025) =
 *Bug Fixes:*
 - List fields can now be used for determining the payment total in payment collection actions.
@@ -434,6 +523,10 @@ This section describes how to install the plugin and get it working.
 
 *Other:*
 - JS library updates
+
+= 3.8.25.1 (December 15, 2025) =
+*Bug Fixes:*
+- Limit submission token generation
 
 = 3.8.25 (27 January 2025) =
 *Bug Fixes:*
