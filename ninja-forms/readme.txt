@@ -3,8 +3,8 @@ Contributors: wpninjasllc, kstover, jameslaws, kbjohnson90, klhall1987, krmoorho
 Tags: forms, form builder, contact form, lead form, registration form
 
 Requires at least: 6.7
-Tested up to: 6.9
-Stable tag: 3.14.7
+Tested up to: 7.0
+Stable tag: 3.14.8
 Requires PHP: 7.4
 
 License: GPLv2 or later
@@ -310,26 +310,35 @@ This section describes how to install the plugin and get it working.
 5. Beautiful Forms Every Time!
 
 == Upgrade Notice ==
-= 3.14.7 (18 June 2026) =
+= 3.14.8 (29 June 2026) =
 
 *Bug Fixes:*
 
-- fix date field "default to current date" displaying wrong date with conditional logic
-- fix date/date-time field value corruption when editing via submissions backend
-- fix checkbox fields not being redacted from record submissions
-- fix time display on single submission page for date/time fields
-- fix decimal precision loss in calculations
-
-*Enhancements:*
-
-- increase default visible columns in legacy submissions from 5 to 10
-- remove survey promo from admin
-
-*Security Enhancements:*
-
-- protect against PHP object injection in form import
+- fix merge tag picker falsely triggering for calculation tags with slash in name
+- fix phone field truncating last digit when browser autofill includes country code
+- fix PHP warning for array offset on null in Model.php
+- fix opinionated styles CSS not loading for logged-out users
+- fix Gutenberg block editor iframe not loading (add API version 3)
+- fix personal data export failing with PHP fatal error in UserDataRequests.php
+- fix invisible reCAPTCHA v2 not working due to block scope bug
+- fix form builder sidebar not closing when screen width expands
+- fix {fields_table} incorrectly including unchecked checkbox fields
 
 == Changelog ==
+= 3.14.8 (29 June 2026) =
+
+*Bug Fixes:*
+
+- fix merge tag picker falsely triggering for calculation tags with slash in name
+- fix phone field truncating last digit when browser autofill includes country code
+- fix PHP warning for array offset on null in Model.php
+- fix opinionated styles CSS not loading for logged-out users
+- fix Gutenberg block editor iframe not loading (add API version 3)
+- fix personal data export failing with PHP fatal error in UserDataRequests.php
+- fix invisible reCAPTCHA v2 not working due to block scope bug
+- fix form builder sidebar not closing when screen width expands
+- fix {fields_table} incorrectly including unchecked checkbox fields
+
 = 3.14.7 (18 June 2026) =
 
 *Bug Fixes:*

@@ -19,6 +19,7 @@ add_action('init', function () {
     );
 
     register_block_type('ninja-forms/form', array_merge($block, [
+        'api_version' => 3,
         'title' => esc_attr__('Ninja Form', 'ninja-forms'),
         'render_callback' => function ($atts) {
             $formID = isset($atts['formID']) ? $atts['formID'] : 1;
@@ -53,6 +54,7 @@ add_action('init', function () {
     );
 
     register_block_type('ninja-forms/submissions-table', array(
+        'api_version' => 3,
         'editor_script' => 'ninja-forms/submissions-table/block',
         'render_callback' => function ($attributes, $content) {
             if (isset($attributes['formID']) && $attributes['formID']) {
