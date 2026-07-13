@@ -2,9 +2,9 @@
 Contributors: wpninjasllc, kstover, jameslaws, kbjohnson90, klhall1987, krmoorhouse, jmcelhaney, wpnzach, ericwindhamsd, mrpritchett, stuartsequeira, nahuelmahe
 Tags: forms, form builder, contact form, lead form, registration form
 
-Requires at least: 6.7
+Requires at least: 6.8
 Tested up to: 7.0
-Stable tag: 3.14.8
+Stable tag: 3.14.9
 Requires PHP: 7.4
 
 License: GPLv2 or later
@@ -310,21 +310,37 @@ This section describes how to install the plugin and get it working.
 5. Beautiful Forms Every Time!
 
 == Upgrade Notice ==
-= 3.14.8 (29 June 2026) =
+= 3.14.9 (14 July 2026) =
 
 *Bug Fixes:*
 
-- fix merge tag picker falsely triggering for calculation tags with slash in name
-- fix phone field truncating last digit when browser autofill includes country code
-- fix PHP warning for array offset on null in Model.php
-- fix opinionated styles CSS not loading for logged-out users
-- fix Gutenberg block editor iframe not loading (add API version 3)
-- fix personal data export failing with PHP fatal error in UserDataRequests.php
-- fix invisible reCAPTCHA v2 not working due to block scope bug
-- fix form builder sidebar not closing when screen width expands
-- fix {fields_table} incorrectly including unchecked checkbox fields
+- restore visibility of "Almost there..." heading in new-form drawer
+- add descender allowance for typed signature fonts in PDF
+
+*Security Enhancements:*
+
+- protect against unauthorized multisite data deletion
+- protect against stored XSS in Repeatable Fieldset
+- protect against field metadata override
+- protect against calc value injection in list fields
+- protect against unauthorized access to submissions via block insertion
 
 == Changelog ==
+= 3.14.9 (14 July 2026) =
+
+*Bug Fixes:*
+
+- restore visibility of "Almost there..." heading in new-form drawer
+- add descender allowance for typed signature fonts in PDF
+
+*Security Enhancements:*
+
+- protect against unauthorized multisite data deletion
+- protect against stored XSS in Repeatable Fieldset
+- protect against field metadata override
+- protect against calc value injection in list fields
+- protect against unauthorized access to submissions via block insertion
+
 = 3.14.8 (29 June 2026) =
 
 *Bug Fixes:*
