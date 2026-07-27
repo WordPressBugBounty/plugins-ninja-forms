@@ -47,12 +47,16 @@ class NF_Fields_ListSelect extends NF_Abstracts_List
             return $errors;
         }
 
+        // Apply render options filters to get dynamically-provided options.
+        // This matches the pattern used in includes/Display/Render.php.
+        $options = isset( $field['options'] ) && is_array( $field['options'] ) ? $field['options'] : array();
+        $options = apply_filters( 'ninja_forms_render_options', $options, $field );
+        $options = apply_filters( 'ninja_forms_render_options_' . $this->_type, $options, $field );
+
         $allowed = array();
-        if ( isset( $field['options'] ) && is_array( $field['options'] ) ) {
-            foreach ( $field['options'] as $option ) {
-                if ( isset( $option['value'] ) ) {
-                    $allowed[] = (string) $option['value'];
-                }
+        foreach ( $options as $option ) {
+            if ( isset( $option['value'] ) ) {
+                $allowed[] = (string) $option['value'];
             }
         }
 

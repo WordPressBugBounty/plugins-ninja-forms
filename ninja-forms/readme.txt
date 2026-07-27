@@ -4,7 +4,7 @@ Tags: forms, form builder, contact form, lead form, registration form
 
 Requires at least: 6.8
 Tested up to: 7.0
-Stable tag: 3.14.10
+Stable tag: 3.14.11
 Requires PHP: 7.4
 
 License: GPLv2 or later
@@ -310,24 +310,25 @@ This section describes how to install the plugin and get it working.
 5. Beautiful Forms Every Time!
 
 == Upgrade Notice ==
-= 3.14.10 (27 July 2026) =
+= 3.14.11 (28 July 2026) =
 
 *Bug Fixes:*
 
-- fix anchor tag URLs breaking when merge tags are used as querystrings in HTML fields
-- fix date field required validation not triggering for Date & Time mode
-- fix {other:date} merge tag reporting dates in UTC instead of local timezone
-
-*Enhancements:*
-
-- add banner-led partner cards to Partner Apps & Services tab
-
-*Security Enhancements:*
-
-- protect against SQL injection in import settings key
-- block unauthenticated shortcode execution
+- fix CSV export column alignment for fields placed after repeatable fieldsets
+- preserve <br>, <hr>, and <pre> tags in HTML field editor
+- clear validation error on Time Only field when user corrects input
+- fix ninja_forms_render_options filter breaking form validation
 
 == Changelog ==
+= 3.14.11 (28 July 2026) =
+
+*Bug Fixes:*
+
+- fix CSV export column alignment for fields placed after repeatable fieldsets
+- preserve <br>, <hr>, and <pre> tags in HTML field editor
+- clear validation error on Time Only field when user corrects input
+- fix ninja_forms_render_options filter breaking form validation
+
 = 3.14.10 (27 July 2026) =
 
 *Bug Fixes:*
