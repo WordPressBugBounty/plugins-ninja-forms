@@ -388,8 +388,15 @@ class NF_Handlers_FieldsetRepeater
             return $return;
         }
 
-        if(is_null($fieldSettings)){
-            $fieldSettings = Ninja_Forms()->form()->get_field( $fieldId )->get_settings();
+        // Ensure field settings are available with fallback to database
+        if(is_null($fieldSettings) || !isset($fieldSettings['fields']) || !is_array($fieldSettings['fields'])){
+            $fieldObj = Ninja_Forms()->form()->get_field( $fieldId );
+            if ($fieldObj) {
+                $fieldSettings = $fieldObj->get_settings();
+            } else {
+                // If we still can't get field settings, return empty to avoid errors
+                return $return;
+            }
         }
 
         if(''!==$fieldId and []!== $fieldSettings){

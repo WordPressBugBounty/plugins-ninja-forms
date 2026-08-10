@@ -250,8 +250,8 @@
 	<header class="section-head">
 	<?php esc_html_e( 'Additional Templates', 'ninja-forms' ); ?>
 	</header>
-	<div class="available"></div>
 <?php } ?>
+<div class="available"></div>
 </script>
 
 <!-- Widget: Forms - New Forms Templates -->

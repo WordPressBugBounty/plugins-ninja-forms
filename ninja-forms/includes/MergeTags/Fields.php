@@ -230,6 +230,21 @@ class NF_MergeTags_Fields extends NF_Abstracts_MergeTags
 
     public function add_field($field)
     {
+        // Ensure field settings are available with fallback to database for repeater fields
+        if (isset($field['type']) && 'repeater' === $field['type']) {
+            if (!isset($field['settings']['fields']) || !is_array($field['settings']['fields'])) {
+                $fieldObj = Ninja_Forms()->form()->get_field($field['id']);
+                if ($fieldObj) {
+                    $freshSettings = $fieldObj->get_settings();
+                    // Merge fresh settings with existing to preserve any runtime additions
+                    $field['settings'] = array_merge(
+                        isset($field['settings']) ? $field['settings'] : array(),
+                        $freshSettings
+                    );
+                }
+            }
+        }
+
         // set boolean check for isRepetater field type
         $isRepeater = isset($field['settings']['type'])
         && isset($field['key'])
@@ -358,6 +373,14 @@ class NF_MergeTags_Fields extends NF_Abstracts_MergeTags
     {
         $field_key =  $field['key'];
 
+        // Ensure field settings are available with fallback to database
+        if (!isset($field['settings']['fields']) || !is_array($field['settings']['fields'])) {
+            $fieldObj = Ninja_Forms()->form()->get_field($field['id']);
+            if ($fieldObj) {
+                $field['settings'] = $fieldObj->get_settings();
+            }
+        }
+
         // Create merge tag for table output
         $tableBase = 'table';
         $tableCallback = 'field_' . $field_key.'_'.$tableBase;
@@ -377,9 +400,20 @@ class NF_MergeTags_Fields extends NF_Abstracts_MergeTags
         $outgoingValue = '';
 
         $list_fields_types = array('listcheckbox', 'listmultiselect', 'listradio', 'listselect');
-        
+
         // Handle fieldset repeater
-        $array = Ninja_Forms()->fieldsetRepeater->extractSubmissions($field['id'], $field['value'], $field['settings']);
+        // Ensure field settings are available with fallback to database
+        $fieldSettings = isset($field['settings']) ? $field['settings'] : array();
+
+        // If settings don't contain the nested fields definition, fetch fresh from database
+        if (!isset($fieldSettings['fields']) || !is_array($fieldSettings['fields'])) {
+            $fieldObj = Ninja_Forms()->form()->get_field($field['id']);
+            if ($fieldObj) {
+                $fieldSettings = $fieldObj->get_settings();
+            }
+        }
+
+        $array = Ninja_Forms()->fieldsetRepeater->extractSubmissions($field['id'], $field['value'], $fieldSettings);
 
         // Iterate submission indexes (each repeated fieldset in the submission)
         foreach ($array as $submissionIndex => $fieldsetArray) {
