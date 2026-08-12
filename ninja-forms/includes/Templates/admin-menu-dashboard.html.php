@@ -258,7 +258,7 @@
 <script id="tmpl-nf-widget-forms-template" type="text/template">
 		<div class="template {{{ data.type }}}">
 				<a href="admin.php?page=ninja-forms&form_id={{{ data.id }}}">
-						<strong class="title">{{{ data.title }}}</strong>
+						<strong class="title"><# if ( data.icon ) { #><span class="{{ data.icon }}" aria-hidden="true"></span> <# } #>{{{ data.title }}}</strong>
 						<div class="desc">{{{ data.desc }}}</div>
 				</a>
 		</div>

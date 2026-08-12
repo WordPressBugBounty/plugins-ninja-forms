@@ -4,7 +4,7 @@ Tags: forms, form builder, contact form, lead form, registration form
 
 Requires at least: 6.8
 Tested up to: 7.0
-Stable tag: 3.14.12
+Stable tag: 3.15.0
 Requires PHP: 7.4
 
 License: GPLv2 or later
@@ -310,23 +310,31 @@ This section describes how to install the plugin and get it working.
 5. Beautiful Forms Every Time!
 
 == Upgrade Notice ==
-= 3.14.12 (10 August 2026) =
+= 3.15.0 (12 August 2026) =
+
+*Enhancements:*
+
+- add AI Form Builder: generate forms from natural language prompts via the Abilities API
 
 *Bug Fixes:*
 
-- tables inserted via toolbar now have visible borders and padding
-- preserve hand-coded table HTML in Email Message field
-- resolve TypeError when nf-behavioral.js file is missing
-- validation error on Time Only field now clears correctly
-- required field asterisk displays correctly on multi-form pages
-- form builder loads correctly when marketing filter is disabled
-- repeatable fieldset data now displays in email summaries
-
-*Security Enhancements:*
-
-- strengthen SQL query parameter handling
+- fix typed signatures with periods appearing incomplete after switching fields
+- prevent form from rendering multiple times when using "Append a Ninja Form" with other plugins
+- allow terms list field to be set as required
 
 == Changelog ==
+= 3.15.0 (12 August 2026) =
+
+*Enhancements:*
+
+- add AI Form Builder: generate forms from natural language prompts via the Abilities API
+
+*Bug Fixes:*
+
+- fix typed signatures with periods appearing incomplete after switching fields
+- prevent form from rendering multiple times when using "Append a Ninja Form" with other plugins
+- allow terms list field to be set as required
+
 = 3.14.12 (10 August 2026) =
 
 *Bug Fixes:*
