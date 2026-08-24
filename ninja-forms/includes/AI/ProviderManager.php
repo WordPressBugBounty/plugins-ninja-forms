@@ -737,6 +737,16 @@ class ProviderManager
             return false;
         }
 
+        // Prefer the same signal the Connectors admin page uses for its
+        // "Connected" badge. has_connector_authentication() only recognizes
+        // a stored API key (env var, constant, or option) and misses
+        // providers like a local Ollama instance, which authenticate via a
+        // runtime-only fallback credential that is never written to those
+        // sources.
+        if (function_exists('WordPress\\AI\\is_connector_configured')) {
+            return (bool) \WordPress\AI\is_connector_configured($provider_id);
+        }
+
         if (function_exists('WordPress\\AI\\has_connector_authentication')) {
             return (bool) \WordPress\AI\has_connector_authentication($provider_id);
         }

@@ -436,6 +436,13 @@ class NF_MergeTags_Fields extends NF_Abstracts_MergeTags
                 $fieldValue = $submissionValueArray['value'];
                 if ( isset( $submissionValueArray['type'] ) ) {
                     $fieldValue = apply_filters( 'ninja_forms_merge_tag_value_' . $submissionValueArray['type'], $fieldValue, $submissionValueArray );
+
+                    $fieldValue = Ninja_Forms()->fieldsetRepeater->formatFieldsetFieldValue(
+                        $fieldsetFieldId,
+                        $fieldValue,
+                        $submissionValueArray['type'],
+                        $fieldSettings
+                    );
                 }
                 
                 $outgoingValue .= '<tr><td valign="top">' . apply_filters('ninja_forms_merge_label', $submissionValueArray['label'], $field, $this->form_id) . ':</td><td>' . $fieldValue . '</td></tr>';
@@ -555,24 +562,13 @@ class NF_MergeTags_Fields extends NF_Abstracts_MergeTags
                     // individual value
                     if(is_array($fieldsetFieldSubmissionValue['value'])){
 
-                        //Detect date field value in RFF
-                        if(isset($fieldsetFieldSubmissionValue['value']['date'])){
-
-                            // initialize outgoing datefield value as empty string
-                            $outgoing[$fieldsetFieldId]['value'] = "";
-
-                            foreach($fieldsetFieldSubmissionValue['value'] as $dateFieldKey => $dateElement) {
-                                //Discard date index for time only fields
-                                if(strpos($dateElement, ":") === false) {
-                                    $outgoing[$fieldsetFieldId]['value'] .= $dateFieldKey . ": " . strip_shortcodes($dateElement) . "<br>";
-                                }
-                            }
-                            
-                        } else {
-                            // value is array but not a date array
-                            // use array_map to strip shortcodes from each value in indexed array
-                            $outgoing[$fieldsetFieldId]['value']=array_map('strip_shortcodes',$fieldsetFieldSubmissionValue['value']);
-                        }
+                        /*
+                         * Strip each individual value, keeping the array shape.
+                         * A date field's parts must survive as parts so they can
+                         * be combined for display further down; flattening them
+                         * here left the raw parts in the output. See #7440.
+                         */
+                        $outgoing[$fieldsetFieldId]['value']=array_map('strip_shortcodes',$fieldsetFieldSubmissionValue['value']);
                     }else{
                         // If value is not array, strip shortcode
                         $outgoing[$fieldsetFieldId]['value']=strip_shortcodes($fieldsetFieldSubmissionValue['value']);

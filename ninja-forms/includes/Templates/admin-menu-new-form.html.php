@@ -925,7 +925,7 @@ Label Three
         if ( 'undefined' != typeof columns.value ) {
             #>
              <div>
-                <input type="text" class="setting" value="{{{ data.value }}}" data-id="value">
+                <input type="text" class="setting" value="{{{ _.escape( data.value ) }}}" data-id="value">
             </div>
             <#
         }

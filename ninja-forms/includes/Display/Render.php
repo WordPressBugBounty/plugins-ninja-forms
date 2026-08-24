@@ -878,6 +878,7 @@ class NF_Display_Render
                 wp_enqueue_media();
             }
 
+            wp_enqueue_style( 'dashicons' );
             wp_enqueue_style( 'quill-core',         $css_dir . 'quill.core.css'   , $ver );
             wp_enqueue_style( 'quill-snow',         $css_dir . 'quill.snow.css'   , $ver );
             wp_enqueue_style( 'quill-custom',       $css_dir . 'quill-custom.css' , $ver );
