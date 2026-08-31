@@ -4,7 +4,7 @@ Tags: forms, form builder, contact form, lead form, registration form
 
 Requires at least: 6.8
 Tested up to: 7.0
-Stable tag: 3.15.1
+Stable tag: 3.15.2
 Requires PHP: 7.4
 
 License: GPLv2 or later
@@ -310,31 +310,37 @@ This section describes how to install the plugin and get it working.
 5. Beautiful Forms Every Time!
 
 == Upgrade Notice ==
-= 3.15.1 (24 August 2026) =
+= 3.15.2 (31 August 2026) =
 
 *Security Enhancements:*
 
-- strengthen input validation for list field option imports
+- enforce granular two-tier permission model in Abilities API, responsibly reported by ChinhNguyen
+- neutralize shortcode brackets in IP address and referer URL merge tags, responsibly reported by Jakub Herman
+- validate repeater child field entries against server-side definitions
+- apply context-correct output escaping in legacy submissions admin
+- ensure shortcode neutralization callback is accessible for array inputs
 
 *Bug Fixes:*
 
-- allow non-Latin characters and special symbols in list field option values
-- preserve HTML formatting in checkbox and radio list option labels after editing
-- capture time values correctly when Date/Time field is inside a Repeater
-- preserve user-authored HTML in rich text editor without restructuring on toggle
-- preserve HTML comments in Email Message field through Source/Visual toggles
-- keep heading-formatted text inside table cells in rich text editor
-- preserve nested div elements in HTML field editor
-- prevent editor from marking field as changed on initial load
-- display rich text editor toolbar icons for logged-out users
-- prevent fatal error when marketing feed data is corrupted
-- delay Date/Time required validation until user finishes entering time
-- make Date/Time field Hour and Minute placeholder text translatable
-- resolve critical error on non-English sites running PHP 8+
-- fix TypeError when Custom Input Mask contains only numbers
-- show correct AI provider status when Ollama connector is configured
+- fix fatal error when Date/Time field is included in a CSV email attachment
+- show correct Developer Mode status notice in form builder settings drawer
 
 == Changelog ==
+= 3.15.2 (31 August 2026) =
+
+*Security Enhancements:*
+
+- enforce granular two-tier permission model in Abilities API, responsibly reported by ChinhNguyen
+- neutralize shortcode brackets in IP address and referer URL merge tags, responsibly reported by Jakub Herman
+- validate repeater child field entries against server-side definitions
+- apply context-correct output escaping in legacy submissions admin
+- ensure shortcode neutralization callback is accessible for array inputs
+
+*Bug Fixes:*
+
+- fix fatal error when Date/Time field is included in a CSV email attachment
+- show correct Developer Mode status notice in form builder settings drawer
+
 = 3.15.1 (24 August 2026) =
 
 *Security Enhancements:*
