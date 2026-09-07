@@ -2,9 +2,9 @@
 Contributors: wpninjasllc, kstover, jameslaws, kbjohnson90, klhall1987, krmoorhouse, jmcelhaney, wpnzach, ericwindhamsd, mrpritchett, stuartsequeira, nahuelmahe
 Tags: forms, form builder, contact form, lead form, registration form
 
-Requires at least: 6.8
-Tested up to: 7.0
-Stable tag: 3.15.2
+Requires at least: 6.9
+Tested up to: 7.1
+Stable tag: 3.15.3
 Requires PHP: 7.4
 
 License: GPLv2 or later
@@ -310,22 +310,33 @@ This section describes how to install the plugin and get it working.
 5. Beautiful Forms Every Time!
 
 == Upgrade Notice ==
-= 3.15.2 (31 August 2026) =
+= 3.15.3 (07 September 2026) =
 
 *Security Enhancements:*
 
-- enforce granular two-tier permission model in Abilities API, responsibly reported by ChinhNguyen
-- neutralize shortcode brackets in IP address and referer URL merge tags, responsibly reported by Jakub Herman
-- validate repeater child field entries against server-side definitions
-- apply context-correct output escaping in legacy submissions admin
-- ensure shortcode neutralization callback is accessible for array inputs
+- strengthen input validation for unserialize() operations
 
 *Bug Fixes:*
 
-- fix fatal error when Date/Time field is included in a CSV email attachment
-- show correct Developer Mode status notice in form builder settings drawer
+- preserve newsletter action list selection when provider connection is temporarily unavailable
+- encode special characters correctly in CSV submission exports
+- allow optional and hidden Date/Time fields to pass validation
+- keep rich text editor scrollbar visible and functional in all views
 
 == Changelog ==
+= 3.15.3 (07 September 2026) =
+
+*Security Enhancements:*
+
+- strengthen input validation for unserialize() operations
+
+*Bug Fixes:*
+
+- preserve newsletter action list selection when provider connection is temporarily unavailable
+- encode special characters correctly in CSV submission exports
+- allow optional and hidden Date/Time fields to pass validation
+- keep rich text editor scrollbar visible and functional in all views
+
 = 3.15.2 (31 August 2026) =
 
 *Security Enhancements:*
