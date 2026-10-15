@@ -40,11 +40,19 @@ abstract class NF_Abstracts_MergeTags
      */
     protected $use_safe = FALSE;
 
+    /**
+     * Is the current replacement going into content that will be run
+     * through do_shortcode()?
+     *
+     * @var boolean
+     */
+    protected $neutralize_substituted_shortcodes = FALSE;
+
     public function __construct()
     {
         add_filter( 'kbj_test', array( $this, 'replace' ) );
 
-        add_filter( 'ninja_forms_render_default_value', array( $this, 'replace' ) );
+        add_filter( 'ninja_forms_render_default_value', array( $this, 'replace_default_value' ) );
 
         add_filter( 'ninja_forms_run_action_settings',  array( $this, 'action_replace' ) );
         add_filter( 'ninja_forms_run_action_settings_preview',  array( $this, 'action_replace' ) );
@@ -72,17 +80,54 @@ abstract class NF_Abstracts_MergeTags
             {
                 $subject['payment_total'] = substr_replace($subject['payment_total'], ':calc', -1, 0);
             }
-
-            if( 'email' == $subject['type'] || 'successmessage' == $subject['type'] ) {
-                $this->use_safe = true;
-            } else {
-                $this->use_safe = false;
-            }
         }
-        $subject = $this->replace( $subject );
-        // Make sure we reset use_safe after we finish replacing.
-        $this->use_safe = false;
+
+        // Email and Success Message use the escaped safe_value for field merge
+        // tags. Keyed off the action type alone: objectType is a builder-only
+        // key absent from stored/published action settings (#8232), the same
+        // shape as the shortcode-neutralization gate below and #8228.
+        $previous_use_safe = $this->use_safe;
+        $this->use_safe = is_array( $subject )
+            && isset( $subject['type'] )
+            && ( 'email' === $subject['type'] || 'successmessage' === $subject['type'] );
+
+        // The success message is run through do_shortcode(). Keyed off the
+        // action type alone: stored action settings can omit objectType.
+        $previous_neutralize = $this->neutralize_substituted_shortcodes;
+        $this->neutralize_substituted_shortcodes = is_array( $subject )
+            && isset( $subject['type'] )
+            && 'successmessage' === $subject['type'];
+
+        try {
+            $subject = $this->replace( $subject );
+        } finally {
+            // Restore the previous flags after we finish replacing.
+            $this->use_safe = $previous_use_safe;
+            $this->neutralize_substituted_shortcodes = $previous_neutralize;
+        }
         return $subject;
+    }
+
+    /**
+     * Merge Tag replacement on a field default value
+     *
+     * Default values are run through do_shortcode() when the form renders, so
+     * values substituted into them are made unable to form a shortcode. The
+     * default value's own text is left untouched.
+     *
+     * @param mixed $subject
+     * @return string|array
+     */
+    public function replace_default_value( $subject )
+    {
+        $previous_neutralize = $this->neutralize_substituted_shortcodes;
+        $this->neutralize_substituted_shortcodes = true;
+
+        try {
+            return $this->replace( $subject );
+        } finally {
+            $this->neutralize_substituted_shortcodes = $previous_neutralize;
+        }
     }
 
     /**
@@ -194,9 +239,25 @@ abstract class NF_Abstracts_MergeTags
             $return = $this->{$callback}();
         } elseif ( is_callable( $callback ) ) {
             $return = $callback();
-        } 
+        }
 
-        return $return;
+        return $this->maybeNeutralizeSubstitutedShortcodes( $return );
+    }
+
+    /**
+     * Neutralize shortcode brackets in a substituted value when the content
+     * being replaced will be run through do_shortcode()
+     *
+     * @param mixed $value
+     * @return mixed
+     */
+    protected function maybeNeutralizeSubstitutedShortcodes( $value )
+    {
+        if ( ! $this->neutralize_substituted_shortcodes || ! is_string( $value ) ) {
+            return $value;
+        }
+
+        return str_replace( array( '[', ']' ), array( '&#91;', '&#93;' ), $value );
     }
 
     /**

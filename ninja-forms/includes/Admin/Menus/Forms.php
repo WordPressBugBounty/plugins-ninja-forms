@@ -382,7 +382,7 @@ final class NF_Admin_Menus_Forms extends NF_Abstracts_Menu
 
         global $wp_rewrite;
         if($wp_rewrite->permalink_structure) {
-            $public_link_structure = site_url() . '/ninja-forms/[FORM_ID]';
+            $public_link_structure = site_url() . '/ninja-forms/[FORM_ID]/';
         } else {
             $public_link_structure = site_url('?nf_public_link=[FORM_ID]');
         }

@@ -15,6 +15,8 @@ return apply_filters( 'ninja_forms_i18n_front_end', array(
     'fieldTextareaRTEInsertLink'            => esc_html__( 'Insert Link', 'ninja-forms' ),
     'fieldTextareaRTEInsertMedia'           => esc_html__( 'Insert Media', 'ninja-forms' ),
     'fieldTextareaRTESelectAFile'           => esc_html__( 'Select a file', 'ninja-forms' ),
+    'fieldsTermsAdd'                        => esc_html__( 'Add New', 'ninja-forms' ),
+    'fieldsTermsNewName'                    => esc_html__( 'New term name', 'ninja-forms' ),
     'tableInsertRowAbove'                   => esc_html__( 'Insert Row Above', 'ninja-forms' ),
     'tableInsertRowBelow'                   => esc_html__( 'Insert Row Below', 'ninja-forms' ),
     'tableInsertColumnLeft'                 => esc_html__( 'Insert Column Left', 'ninja-forms' ),
@@ -29,6 +31,9 @@ return apply_filters( 'ninja_forms_i18n_front_end', array(
     'insertLink'                            => esc_html__( 'Insert Link', 'ninja-forms' ),
     'formErrorsCorrectErrors'               => esc_html__( 'Please correct errors before submitting this form.', 'ninja-forms' ),
     'formHoneypot'                          => esc_html__( 'If you are a human seeing this field, please leave it empty.', 'ninja-forms' ),
+    // Shared with the server-side required check in
+    // includes/Abstracts/Field.php::get_required_field_message(). One
+    // required-field condition, one translatable string. See issue #8182.
     'validateRequiredField'                 => esc_html__( 'This is a required field.', 'ninja-forms' ),
     'honeypotHoneypotError'                 => esc_html__( 'Honeypot Error', 'ninja-forms' ),
     'fileUploadOldCodeFileUploadInProgress' => esc_html__( 'File Upload in Progress.', 'ninja-forms' ),

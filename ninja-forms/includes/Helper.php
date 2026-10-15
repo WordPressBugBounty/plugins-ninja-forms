@@ -907,4 +907,35 @@ class WPN_Helper
         return $value;
     }
     
+    /**
+     * Run a field default value through do_shortcode(), keeping it unchanged
+     * when a shortcode echoes rather than returns its output.
+     *
+     * @param mixed $value
+     * @return mixed
+     */
+    public static function process_default_value_shortcodes( $value )
+    {
+        if ( is_array( $value ) ) {
+            return $value;
+        }
+
+        ob_start();
+        do_shortcode( $value );
+        $ob = ob_get_clean();
+
+        if ( ! $ob ) {
+            $value = do_shortcode( $value );
+        }
+
+        // Substituted merge-tag values arrive with their brackets entity-encoded
+        // so they can't form a shortcode. Shortcode processing is done, so show
+        // them as the characters they are.
+        if ( is_string( $value ) ) {
+            $value = str_replace( array( '&#91;', '&#93;' ), array( '[', ']' ), $value );
+        }
+
+        return $value;
+    }
+
 } // End Class WPN_Helper

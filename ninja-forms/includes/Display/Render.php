@@ -276,17 +276,7 @@ class NF_Display_Render
                     $default_value = preg_replace( '/{[^}]}/', '', $default_value );
 
                     if ( $default_value || ( 'number' === $field_type && '0' === $default_value ) ) {
-                        $settings['value'] = $default_value;
-
-                        if( ! is_array( $default_value ) ) {
-                            ob_start();
-                            do_shortcode( $settings['value'] );
-                            $ob = ob_get_clean();
-
-                            if( ! $ob ) {
-                                $settings['value'] = do_shortcode( $settings['value'] );
-                            }
-                        }
+                        $settings['value'] = WPN_Helper::process_default_value_shortcodes( $default_value );
                     }
                 }
 
@@ -727,17 +717,7 @@ class NF_Display_Render
                     $default_value = preg_replace( '/{.*}/', '', $default_value );
 
                     if ( $default_value || ( 'number' === $field_type && '0' === $default_value ) ) {
-                        $field['settings']['value'] = $default_value;
-
-                        if( ! is_array( $default_value ) ) {
-                            ob_start();
-                            do_shortcode( $field['settings']['value'] );
-                            $ob = ob_get_clean();
-
-                            if( ! $ob ) {
-                                $field['settings']['value'] = do_shortcode( $field['settings']['value'] );
-                            }
-                        }
+                        $field['settings']['value'] = WPN_Helper::process_default_value_shortcodes( $default_value );
                     }
                 }
 
@@ -911,6 +891,25 @@ class NF_Display_Render
         if( $is_preview || in_array( $form_id, self::$form_uses_react_fields ) ) {
             self::enqueue_react_field_assets();
         }
+
+        /*
+         * Keep our own reference to Underscore.
+         *
+         * The front-end application reads the `_` global while it runs, but the
+         * global belongs to the page, not to us: any other script whose bundle
+         * does `root._ = <its own library>` replaces it, and our code then calls
+         * a function that is no longer there. Stashing the reference the instant
+         * after WordPress's own underscore script has run means a later
+         * replacement cannot reach us. See issue #8211.
+         *
+         * This is a private handle for the bundle wrapper in gulpfile.js. It
+         * never writes to `_` itself, so other plugins keep whatever they set.
+         */
+        wp_add_inline_script(
+            'underscore',
+            'window.nfUnderscore = window.nfUnderscore || window._;',
+            'after'
+        );
 
         wp_enqueue_script( 'nf-front-end-deps', $js_dir . 'front-end-deps.js', array( 'jquery', 'backbone' ), $ver );
         wp_enqueue_script( 'nf-front-end',      $js_dir . 'front-end.js',      array( 'nf-front-end-deps'  ), $ver );

@@ -122,7 +122,10 @@ final class NF_Admin_Menus_Dashboard extends NF_Abstracts_Submenu
                 wp_enqueue_script('nf-be-data-script', Ninja_Forms::$url . 'build/nf-behavioral.js', $nf_be_data_asset_php["dependencies"], $nf_be_data_asset_php["version"], true);
                 wp_localize_script('nf-be-data-script', 'nfBeData', [
                     'restUrl'               =>  esc_url_raw( get_rest_url() ),
-                    'token'                 =>  wp_create_nonce( 'wp_rest' )
+                    'token'                 =>  wp_create_nonce( 'wp_rest' ),
+                    'userId'                =>  get_current_user_id(),
+                    'clientVersion'         =>  Ninja_Forms::VERSION,
+                    'enabled'               =>  current_user_can('manage_options') && Ninja_Forms()->dispatcher()->should_we_send(),
                 ]);
             }
             

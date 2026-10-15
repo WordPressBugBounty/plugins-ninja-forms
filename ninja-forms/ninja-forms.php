@@ -3,7 +3,7 @@
 Plugin Name: Ninja Forms
 Plugin URI: https://ninjaforms.com/?utm_source=WordPress.org&utm_medium=Plugin+header
 Description: Free WordPress form builder with calculations, signatures, star ratings, unlimited submissions stored on your site, and an AI form builder.
-Version: 3.15.5
+Version: 3.15.6
 Author: Saturday Drive
 Author URI: http://ninjaforms.com/?utm_source=Ninja+Forms+Plugin&utm_medium=Plugins+WP+Dashboard
 Text Domain: ninja-forms
@@ -45,7 +45,7 @@ final class Ninja_Forms
      * @since 3.0
      */
 
-    const VERSION = '3.15.5';
+    const VERSION = '3.15.6';
 
     /**
      * @since 3.4.0
@@ -239,6 +239,7 @@ final class Ninja_Forms
                 $plugin_upgrade = false;
             }
             update_option( 'ninja_forms_version', self::VERSION );
+            self::remove_legacy_deprecated_option();
             // If we've not recorded our db version...
             if ( ! get_option( 'ninja_forms_db_version' ) ) {
                 // If this isn't a fresh install...
@@ -333,6 +334,15 @@ final class Ninja_Forms
                 * Background Processes
                 */
             require_once Ninja_Forms::$dir . 'includes/Libraries/BackgroundProcessing/wp-background-processing.php';
+
+            /*
+                * Session Garbage Collection
+                *
+                * Loaded on every request, unlike the rest of the session library,
+                * which stays lazy. Without this the collector is never registered
+                * and expired session rows accumulate in wp_options forever. #8133
+                */
+            require_once Ninja_Forms::$dir . 'includes/Libraries/Session/wp-session-garbage-collection.php';
             self::$instance->requests[ 'update-fields' ] = new NF_AJAX_Processes_UpdateFields();
 
 
@@ -555,7 +565,7 @@ final class Ninja_Forms
     public function register_rewrite_rules()
     {
         add_rewrite_tag('%nf_public_link%', '([a-zA-Z0-9]+)');
-        add_rewrite_rule('^ninja-forms/([a-zA-Z0-9]+)/?', 'index.php?nf_public_link=$matches[1]', 'top');
+        add_rewrite_rule('^ninja-forms/([a-zA-Z0-9]+)/?$', 'index.php?nf_public_link=$matches[1]', 'top');
     }
 
     public function admin_init()
@@ -618,9 +628,42 @@ final class Ninja_Forms
         if($public_link_key = sanitize_text_field(get_query_var('nf_public_link'))){
             // @TODO Move this functionality behind a boundry.
             global $wpdb;
-            $query = $wpdb->prepare( "SELECT `parent_id` FROM {$wpdb->prefix}nf3_form_meta WHERE `key` = 'public_link_key' AND `value` = %s", $public_link_key );
-            $results = $wpdb->get_col($query);
-            $form_id = reset($results);
+            $query = $wpdb->prepare(
+                "SELECT link.`parent_id`, link.`value`
+                FROM `{$wpdb->prefix}nf3_form_meta` as link
+                LEFT JOIN `{$wpdb->prefix}nf3_form_meta` as allowed
+                ON allowed.parent_id = link.parent_id
+                WHERE link.`key` = 'public_link_key'
+                AND link.`value` = %s
+                AND allowed.`key` = 'allow_public_link'
+                AND allowed.`value` = '1'",
+                $public_link_key
+            );
+            $results = $wpdb->get_results($query);
+
+            /*
+             * The database compares strings without regard to case, so the
+             * stored key is compared again here. Only the key as it was issued
+             * opens the form.
+             */
+            $form_id = 0;
+            foreach( $results as $result ) {
+                if( $public_link_key === $result->value ) {
+                    $form_id = $result->parent_id;
+                    break;
+                }
+            }
+
+            /*
+             * The key belongs to no form, or to a form that is not currently
+             * shared through a public link, or the address carries more than
+             * the key itself. Serve the site's own 404 rather than letting the
+             * request fall through to the default query, which renders real
+             * site content under an unlimited set of addresses.
+             */
+            if( ! $form_id || ! $this->is_canonical_public_link_request( $public_link_key ) ) {
+                return $this->public_link_not_found( $template );
+            }
 
             $page_template = get_page_template();
             if( ! empty( $page_template ) )
@@ -629,6 +672,52 @@ final class Ninja_Forms
             new NF_Display_PagePublicLink($form_id);
         }
         return $template;
+    }
+
+    /**
+     * Whether the requested address is the public link itself and nothing more.
+     *
+     * The rewrite rule claims the key alone, but a site whose rewrite rules
+     * have not been flushed since updating still matches anything appended to
+     * it, so the request is checked directly as well.
+     *
+     * @param string $public_link_key
+     * @return bool
+     */
+    protected function is_canonical_public_link_request( $public_link_key )
+    {
+        $request = isset( $GLOBALS[ 'wp' ]->request ) ? trim( (string) $GLOBALS[ 'wp' ]->request, '/' ) : '';
+
+        // Requested without pretty permalinks, ie ?nf_public_link=<key>.
+        if( '' === $request ) return TRUE;
+
+        return 'ninja-forms/' . $public_link_key === $request;
+    }
+
+    /**
+     * Turn a public link request that resolves to nothing into the site's
+     * ordinary 404, at the address that was requested.
+     *
+     * @param string $template
+     * @return string
+     */
+    protected function public_link_not_found( $template )
+    {
+        global $wp_query;
+
+        $wp_query->set_404();
+
+        // Drop the posts the default query collected, so no real content is rendered.
+        $wp_query->posts = array();
+        $wp_query->post = NULL;
+        $wp_query->post_count = 0;
+        $wp_query->found_posts = 0;
+
+        status_header( 404 );
+
+        $not_found_template = get_404_template();
+
+        return $not_found_template ? $not_found_template : $template;
     }
 
     /**
@@ -1152,6 +1241,8 @@ final class Ninja_Forms
         $migrations = new NF_Database_Migrations();
         $migrations->migrate();
 
+        self::remove_legacy_deprecated_option();
+
         if( Ninja_Forms()->form()->get_forms() ) return;
 
         // Go ahead and create our randomn number for gated releases in the future
@@ -1173,6 +1264,21 @@ final class Ninja_Forms
 
         // Setup our add-on feed wp cron so that our add-on list is up to date on a weekly basis.
         nf_marketing_feed_cron_job();
+    }
+
+    /**
+     * Remove the 2.9-era ninja_forms_load_deprecated option.
+     *
+     * Add-ons still switch to their removed 2.9 code when this option is set,
+     * which hides their license fields or blocks their activation (#7246).
+     *
+     * @return void
+     */
+    private static function remove_legacy_deprecated_option()
+    {
+        if ( false !== get_option( 'ninja_forms_load_deprecated', false ) ) {
+            delete_option( 'ninja_forms_load_deprecated' );
+        }
     }
 
     /**
@@ -1296,6 +1402,21 @@ function nf_optin_update_environment_vars() {
     Ninja_Forms()->tracking->report_optin();
 }
 add_action( 'nf_optin_cron', 'nf_optin_update_environment_vars' );
+
+add_action('nf_behavioral_delivery', function () {
+    Ninja_Forms()->dispatcher()->sendBehavioralData();
+});
+
+// Recover a pending queue after an interrupted cron request.
+add_action('admin_init', function () {
+    if (current_user_can('manage_options') && Ninja_Forms()->dispatcher()->should_we_send()
+        && !wp_next_scheduled('nf_behavioral_delivery') && NF_Telemetry_BehavioralQueue::pending(1)) {
+        NF_Telemetry_BehavioralQueue::schedule(300);
+    }
+});
+
+// Stop autoloading a behavioral backlog saved by an older version.
+add_action('admin_init', ['NF_Telemetry_BehavioralQueue', 'unloadLegacy']);
 
 /**
  * Function to register our Custom Cron Recurrences.

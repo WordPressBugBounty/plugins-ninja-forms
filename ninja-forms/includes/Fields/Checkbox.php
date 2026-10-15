@@ -192,8 +192,8 @@ class NF_Fields_Checkbox extends NF_Abstracts_Input
         // Creating settings variables for our check.
         if( is_array( $field ) ) {
             // The email action sends teh field variable as an array
-            $checked_setting    = $field[ 'setting' ][ 'checked_value' ];
-            $unchecked_setting  = $field[ 'setting' ][ 'unchecked_value' ];
+            $checked_setting    = $field[ 'settings' ][ 'checked_value' ] ?? '';
+            $unchecked_setting  = $field[ 'settings' ][ 'unchecked_value' ] ?? '';
         } else {
             $checked_setting    = $field->get_setting( 'checked_value' );
             $unchecked_setting  = $field->get_setting( 'unchecked_value' );

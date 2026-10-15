@@ -213,7 +213,7 @@
 						<li><a href="<?php
 								global $wp_rewrite;
 								if($wp_rewrite->permalink_structure) {
-										echo site_url() . '/ninja-forms/{{{ data.public_link_key }}}';
+										echo site_url() . '/ninja-forms/{{{ data.public_link_key }}}/';
 								} else {
 										echo site_url('?nf_public_link={{{ data.public_link_key }}}');
 								}

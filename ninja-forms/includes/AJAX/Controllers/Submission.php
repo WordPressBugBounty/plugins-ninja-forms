@@ -194,6 +194,10 @@ class NF_AJAX_Controllers_Submission extends NF_Abstracts_Controller
 
     protected function process()
     {
+        // Discard client-submitted extra data stored under a reserved,
+        // server-generated key before it enters processing. See issue #8228.
+        $this->scrubReservedExtraKeys();
+
         // Init Field Merge Tags.
         $field_merge_tags = Ninja_Forms()->merge_tags[ 'fields' ];
         $field_merge_tags->set_form_id( $this->_form_id );
@@ -578,6 +582,49 @@ class NF_AJAX_Controllers_Submission extends NF_Abstracts_Controller
      *
      * @return void
      */
+    /**
+     * Submission "extra" data keys reserved for server-generated data.
+     *
+     * Client-submitted values under these keys are discarded during
+     * processing so they cannot spoof or overwrite server data, or reach
+     * an admin screen that renders stored extra data. See issue #8228.
+     *
+     * @return array
+     */
+    protected function getReservedExtraKeys(): array
+    {
+        return apply_filters( 'ninja_forms_reserved_extra_keys', array(
+            'calculations',
+            'product_fields',
+        ) );
+    }
+
+    /**
+     * Remove client-submitted extra data stored under a reserved key.
+     *
+     * WordPress unslashes post meta keys when they are written, so each
+     * submitted key is compared to the reserved list in the form it will be
+     * stored as. This runs for both fresh and resumed submissions, and the
+     * re-merge in the calculations step reads the same scrubbed source.
+     * See issue #8228.
+     *
+     * @return void
+     */
+    protected function scrubReservedExtraKeys(): void
+    {
+        if ( ! isset( $this->_form_data[ 'extra' ] ) || ! is_array( $this->_form_data[ 'extra' ] ) ) {
+            return;
+        }
+
+        $reserved = $this->getReservedExtraKeys();
+
+        foreach ( array_keys( $this->_form_data[ 'extra' ] ) as $key ) {
+            if ( in_array( wp_unslash( $key ), $reserved, true ) ) {
+                unset( $this->_form_data[ 'extra' ][ $key ] );
+            }
+        }
+    }
+
     private function maybePreserveExtraData(): void
     {
         if (

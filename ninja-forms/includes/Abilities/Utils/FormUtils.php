@@ -1417,7 +1417,7 @@ function ninja_forms_ability_get_public_link( $input ) {
 
 			// Build public link URL using pretty URL format /ninja-forms/{slug}
 			// This matches the UI behavior and uses WordPress rewrite rules
-			$public_link = home_url( '/ninja-forms/' . $public_link_key );
+			$public_link = home_url( '/ninja-forms/' . $public_link_key . '/' );
 			$form->update_setting( 'public_link', $public_link );
 
 			$form->save();

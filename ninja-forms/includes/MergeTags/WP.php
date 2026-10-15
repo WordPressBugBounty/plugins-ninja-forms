@@ -49,7 +49,7 @@ class NF_MergeTags_WP extends NF_Abstracts_MergeTags
                 $meta_value = get_post_meta( $this->post_id(), $meta_key, true  );
 
                 if ( '' != $meta_value ) {
-                    $subject = str_replace( $search, $meta_value, $subject );
+                    $subject = str_replace( $search, $this->maybeNeutralizeSubstitutedShortcodes( $meta_value ), $subject );
                 } else {
                     $subject = str_replace( $search, '', $subject );
                 }
@@ -76,7 +76,7 @@ class NF_MergeTags_WP extends NF_Abstracts_MergeTags
                 // Only attempt replacement if meta value is string
                 if (is_string($meta_value)) {
 
-                    $subject = str_replace($search, $meta_value, $subject);
+                    $subject = str_replace($search, $this->maybeNeutralizeSubstitutedShortcodes($meta_value), $subject);
                 }
             }
             
@@ -139,7 +139,21 @@ class NF_MergeTags_WP extends NF_Abstracts_MergeTags
 
     protected function post_url()
     {
+        // Outside the loop, the front page is not the last displayed blog post.
+        if ( ! is_admin() && is_front_page() && ! in_the_loop() ) {
+            return home_url( '/' );
+        }
+
         $post_id = $this->post_id();
+        if ( ! $post_id && is_admin() && wp_doing_ajax() ) {
+            // A latest-posts homepage has no post ID to recover from the referer.
+            $referer = wp_get_referer();
+            // Query parameters and fragments do not change the containing homepage.
+            $referer = $referer ? preg_split( '/[?#]/', $referer, 2 )[0] : '';
+            if ( $referer && untrailingslashit( $referer ) === untrailingslashit( home_url( '/' ) ) ) {
+                return home_url( '/' );
+            }
+        }
         if( ! $post_id ) return;
         $post = get_post( $post_id );
         return ( $post ) ? get_permalink( $post->ID ) : '';

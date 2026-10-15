@@ -37,6 +37,7 @@ class NF_Fields_Confirm extends NF_Abstracts_Input
 
     public function validate( $field, $data )
     {
+        $errors = array();
         if( false ){
             $errors[] = esc_html__( 'Fields do not match.', 'ninja-forms' );
         }
