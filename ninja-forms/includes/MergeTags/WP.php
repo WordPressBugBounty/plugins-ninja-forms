@@ -49,7 +49,7 @@ class NF_MergeTags_WP extends NF_Abstracts_MergeTags
                 $meta_value = get_post_meta( $this->post_id(), $meta_key, true  );
 
                 if ( '' != $meta_value ) {
-                    $subject = str_replace( $search, $this->maybeNeutralizeSubstitutedShortcodes( $meta_value ), $subject );
+                    $subject = str_replace( $search, $this->prepareSubstitutedValue( $meta_value ), $subject );
                 } else {
                     $subject = str_replace( $search, '', $subject );
                 }
@@ -76,7 +76,7 @@ class NF_MergeTags_WP extends NF_Abstracts_MergeTags
                 // Only attempt replacement if meta value is string
                 if (is_string($meta_value)) {
 
-                    $subject = str_replace($search, $this->maybeNeutralizeSubstitutedShortcodes($meta_value), $subject);
+                    $subject = str_replace($search, $this->prepareSubstitutedValue($meta_value), $subject);
                 }
             }
             
@@ -119,7 +119,7 @@ class NF_MergeTags_WP extends NF_Abstracts_MergeTags
 
         if ( is_admin() && defined( 'DOING_AJAX' ) && DOING_AJAX ) {
             // If we are doing AJAX, use the referer to get the Post ID.
-            $post_id = url_to_postid( wp_get_referer() );
+            $post_id = $this->viewable_referer_post_id( url_to_postid( wp_get_referer() ) );
         } elseif( $post ) {
             $post_id = $post->ID;
         } else {

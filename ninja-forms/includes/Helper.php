@@ -373,6 +373,60 @@ class WPN_Helper
     }
 
     /**
+     * Form settings that hold rich text and are printed as HTML on the front end.
+     *
+     * @since 3.15.7
+     * @see https://github.com/Saturday-Drive/ninja-forms/issues/8254
+     */
+    const FORM_HTML_SETTINGS = array( 'not_logged_in_msg', 'sub_limit_msg' );
+
+    /**
+     * Apply the safe-HTML allowlist to a form's rich-text message settings.
+     *
+     * Callers decide when to apply it, using the same unfiltered_html policy
+     * as field settings. Other settings and non-string values are untouched.
+     * Shortcodes survive as text and still run when the message is displayed.
+     *
+     * @since 3.15.7
+     *
+     * @param array|mixed $settings Form settings keyed by setting name.
+     * @return array|mixed The settings with their rich-text messages cleaned.
+     */
+    public static function sanitize_form_html_settings( $settings )
+    {
+        if( ! is_array( $settings ) ) return $settings;
+
+        foreach( self::FORM_HTML_SETTINGS as $setting_name ) {
+            if( isset( $settings[ $setting_name ] ) && is_string( $settings[ $setting_name ] ) ) {
+                $settings[ $setting_name ] = wp_kses_post( $settings[ $setting_name ] );
+            }
+        }
+
+        return $settings;
+    }
+
+    /**
+     * Clean a stored rich-text form message before display on sites that
+     * disallow unfiltered HTML.
+     *
+     * On those sites no one may store scripts, so this also neutralises any
+     * stored before 3.15.7. Elsewhere the message is returned unchanged.
+     * Apply it to the stored message before do_shortcode(), so shortcode
+     * output is not filtered.
+     *
+     * @since 3.15.7
+     *
+     * @param mixed $message Stored message.
+     * @return mixed The message, cleaned when unfiltered HTML is disallowed.
+     */
+    public static function maybe_kses_form_message( $message )
+    {
+        if( ! is_string( $message ) || ! self::maybe_disallow_unfiltered_html_for_escaping() ) return $message;
+
+        return wp_kses_post( $message );
+    }
+
+    /**
      * @param $value
      * @return array|string
      */

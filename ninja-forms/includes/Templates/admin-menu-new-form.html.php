@@ -750,9 +750,10 @@ Label Three
     <label for="{{{ data.name }}}" class="nf-select">{{{ data.label }}} {{{ data.renderTooltip() }}}
         <select id="{{{ data.name }}}" class="setting">
             <#
+            var optionText = Backbone.Radio.channel( 'app' ).request( 'get:optionText' );
             _.each( data.options, function( option ) {
                 #>
-                <option value="{{{ option.value }}}" {{{ ( data.value == option.value ) ? 'selected="selected"' : '' }}}>{{{ option.label }}}</option>
+                <option value="{{ optionText( option.value ) }}" {{{ ( data.value == option.value ) ? 'selected="selected"' : '' }}}>{{ optionText( option.label ) }}</option>
                 <#
             } );
             #>
@@ -772,9 +773,10 @@ Label Three
     <label for="{{{ data.name }}}" class="nf-select">{{{ data.label }}} {{{ data.renderTooltip() }}}
         <select id="{{{ data.name }}}" class="setting">
             <#
+            var optionText = Backbone.Radio.channel( 'app' ).request( 'get:optionText' );
             _.each( data.options, function( option ) {
                 #>
-                <option value="{{{ option.value }}}" {{{ ( data.value == option.value ) ? 'selected="selected"' : '' }}}>{{{ option.label }}}</option>
+                <option value="{{ optionText( option.value ) }}" {{{ ( data.value == option.value ) ? 'selected="selected"' : '' }}}>{{ optionText( option.label ) }}</option>
                 <#
             } );
             #>
@@ -815,10 +817,11 @@ Label Three
 
     <span class="nf-setting-label">{{{ data.label }}}{{{ data.renderTooltip() }}}</span>
     <#
+    var optionText = Backbone.Radio.channel( 'app' ).request( 'get:optionText' );
     _.each( data.options, function( option ) {
     #>
-    <span class="nf-setting-label">{{{ option.label }}}</span>
-    <input type="radio" value="{{{ option.value }}}" name="{{{ data.name }}}" {{{ data.value == option.value ? "checked" : '' }}}></option>
+    <span class="nf-setting-label">{{ optionText( option.label ) }}</span>
+    <input type="radio" value="{{ optionText( option.value ) }}" name="{{{ data.name }}}" {{{ data.value == option.value ? "checked" : '' }}}></option>
     <#
     } );
     #>
@@ -833,17 +836,18 @@ Label Three
     <# } #>
 	<div class="nf-setting button-toggle">
 		<#
+		var optionText = Backbone.Radio.channel( 'app' ).request( 'get:optionText' );
 		_.each( data.options, function( option ) {
 		#>
-			<label for="field-{{{ option.value }}}"
-				data-option_value="{{{ option.value }}}">
-				<input type="radio" id="field-{{{ option.value }}}"
+			<label for="field-{{ optionText( option.value ) }}"
+				data-option_value="{{ optionText( option.value ) }}">
+				<input type="radio" id="field-{{ optionText( option.value ) }}"
 			       style="display:none;"
 			       class="nf-button-toggle setting"
-					value="{{{ option.value }}}" name="{{{data.name }}}"
+					value="{{ optionText( option.value ) }}" name="{{{data.name }}}"
 	                {{{ data.value == option.value ? "checked" : '' }}}>
 				<span class="nf-button primary {{{ data.value != option.value ?
-				"disabled": "" }}}">{{{ option.label }}}</span>
+				"disabled": "" }}}">{{ optionText( option.label ) }}</span>
 			</label>
 			<#
 		} );

@@ -104,7 +104,7 @@ class NF_Display_Render
         // $form->update_settings( $settings );
 
         if( $form->get_setting( 'logged_in' ) && ! is_user_logged_in() ){
-            echo do_shortcode( $form->get_setting( 'not_logged_in_msg' ));
+            echo do_shortcode( WPN_Helper::maybe_kses_form_message( $form->get_setting( 'not_logged_in_msg' ) ) );
             return;
         }
 
@@ -118,7 +118,7 @@ class NF_Display_Render
             AND p.post_status = 'publish'");
 
             if( intval( $result->count ) >= $form->get_setting( 'sub_limit_number' ) ) {
-                echo do_shortcode( apply_filters( 'nf_sub_limit_reached_msg', $form->get_setting( 'sub_limit_msg' ), $form_id ));
+                echo do_shortcode( apply_filters( 'nf_sub_limit_reached_msg', WPN_Helper::maybe_kses_form_message( $form->get_setting( 'sub_limit_msg' ) ), $form_id ));
                 return;
             }
         }
@@ -614,7 +614,7 @@ class NF_Display_Render
         }
 
         if( isset( $form[ 'settings' ][ 'logged_in' ] ) && $form[ 'settings' ][ 'logged_in' ] && ! is_user_logged_in() ){
-            echo do_shortcode( $form[ 'settings' ][ 'not_logged_in_msg' ]);
+            echo do_shortcode( WPN_Helper::maybe_kses_form_message( $form[ 'settings' ][ 'not_logged_in_msg' ] ) );
             return;
         }
 

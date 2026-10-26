@@ -4,7 +4,7 @@ Tags: forms, form builder, contact form, lead form, calculator form
 
 Requires at least: 6.9
 Tested up to: 7.1
-Stable tag: 3.15.6
+Stable tag: 3.15.7
 Requires PHP: 7.4
 
 License: GPLv2 or later
@@ -216,44 +216,68 @@ This section describes how to install the plugin and get it working.
 7. A finished form on the front end, with a live total, a star rating, and a signature
 
 == Upgrade Notice ==
-= 3.15.6 (15 October 2026) =
+= 3.15.7 (2 November 2026) =
 
 *Security Enhancements:*
 
-- protect HTML fields against script injection through query string merge tag values
-- block shortcode execution through submitted field values in Success Message merge tags
-- block shortcode execution through the {wp:user_display_name} merge tag
-- protect stored submission data against cross-site scripting
-- give each Email action CSV attachment its own private file
-- always escape field values in Email and Success Message actions, regardless of how the action was saved
+- verify the license server's certificate when checking and activating licenses
+- apply the site's unfiltered HTML restriction to the Not Logged-In and Limit Reached messages
+- show option labels in form builder dropdown settings as plain text
+- harden merge tag handling of submitted values, visitor IP address, referring page and post details
+- enforce the "Require user to be logged in" setting when a form is submitted
 
 *Bug Fixes:*
 
-- restore the Quote Request form template
-- make the resize handle work in the Email action HTML source editor
-- return the correct URL from {wp:post_url} when a form is on the home page
-- remove the "Undefined variable $errors" PHP warning from Confirm fields
-- show Repeatable Fieldset values on the Submissions page after switching forms
-- keep List field values from being copied into new entries when a form has more than one Repeatable Fieldset
-- keep the page at the new entry after adding another Repeatable Fieldset entry
-- keep field values containing special characters intact in emails and success messages
-- leave out deleted Repeatable Fieldset fields when re-sending an email action
-- handle merge tags in Email action To, CC and BCC fields as valid address lists
-- make "Add New Terms" work on the front end for Terms List fields
-- show term names instead of term IDs in Terms List submissions
-- show field labels that contain HTML as readable text on the New Submissions page
-- use one translatable message for required-field errors
-- return a 404 for public link URLs with invalid keys
-- keep forms loading when another script replaces the page's Underscore library
-- show Time Only and Date & Time values inside Repeatable Fieldsets correctly when editing a submission
-- use Single Checkbox custom values in Email action CSV attachments and remove the related PHP warnings
-- remove the legacy ninja_forms_load_deprecated option
-- regularly clean up expired session data
-- look up newsletter lists only in the form builder instead of on every page view
-- improve reliability of opt-in usage data and limit how much is stored when reports are not acknowledged
+- keep hand-coded tables intact in the Email action message editor
+- load the Email action rich text editor correctly when a message contains older table markup
+- keep Checkbox List calculations working when an option has a blank calc value
+- count only typed characters toward the character limit on fields with an input mask
+- show an error when a favorite field could not be deleted instead of appearing to remove it
+- keep a form's display name when it is imported
+- fill in {submission:sequence} in emails re-sent from the Submissions page
+- keep date values in the correct format when editing a submission
+- keep calculated values in an HTML field when an unrelated field in it changes
+- let Date fields created before date modes existed pass required validation
+- register the first keystroke or paste in an empty rich text Paragraph Text field
+- remove PHP warnings when a form contains a field from a deactivated add-on
+- prevent a fatal error on submission when a Collect Payment action's payment add-on is inactive
+- keep spacing intact when Paragraph Text reaches its word limit
+- remove PHP warnings when exporting submissions with an empty Repeatable Fieldset
+- stop the form builder freezing when adding or moving fields in a large Repeatable Fieldset
+- prevent a page error when a {querystring:} merge tag receives a list value
 
 
 == Changelog ==
+= 3.15.7 (2 November 2026) =
+
+*Security Enhancements:*
+
+- verify the license server's certificate when checking and activating licenses
+- apply the site's unfiltered HTML restriction to the Not Logged-In and Limit Reached messages
+- show option labels in form builder dropdown settings as plain text
+- harden merge tag handling of submitted values, visitor IP address, referring page and post details
+- enforce the "Require user to be logged in" setting when a form is submitted
+
+*Bug Fixes:*
+
+- keep hand-coded tables intact in the Email action message editor
+- load the Email action rich text editor correctly when a message contains older table markup
+- keep Checkbox List calculations working when an option has a blank calc value
+- count only typed characters toward the character limit on fields with an input mask
+- show an error when a favorite field could not be deleted instead of appearing to remove it
+- keep a form's display name when it is imported
+- fill in {submission:sequence} in emails re-sent from the Submissions page
+- keep date values in the correct format when editing a submission
+- keep calculated values in an HTML field when an unrelated field in it changes
+- let Date fields created before date modes existed pass required validation
+- register the first keystroke or paste in an empty rich text Paragraph Text field
+- remove PHP warnings when a form contains a field from a deactivated add-on
+- prevent a fatal error on submission when a Collect Payment action's payment add-on is inactive
+- keep spacing intact when Paragraph Text reaches its word limit
+- remove PHP warnings when exporting submissions with an empty Repeatable Fieldset
+- stop the form builder freezing when adding or moving fields in a large Repeatable Fieldset
+- prevent a page error when a {querystring:} merge tag receives a list value
+
 = 3.15.6 (15 October 2026) =
 
 *Security Enhancements:*

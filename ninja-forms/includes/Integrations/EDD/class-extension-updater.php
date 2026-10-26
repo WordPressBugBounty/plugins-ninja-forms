@@ -75,7 +75,7 @@ class NF_Extension_Updater
         );
 
         // Call the custom API.
-        $response = wp_remote_post( $this->store_url, array( 'timeout' => 15, 'sslverify' => false, 'body' => $api_params ) );
+        $response = wp_remote_post( $this->store_url, array( 'timeout' => 15, 'sslverify' => $this->verify_ssl(), 'body' => $api_params ) );
 
         $this->maybe_debug( $response );
 
@@ -138,7 +138,7 @@ class NF_Extension_Updater
         );
 
         // Call the custom API.
-        $response = wp_remote_post( $this->store_url, array( 'timeout' => 15, 'sslverify' => false, 'body' => $api_params ) );
+        $response = wp_remote_post( $this->store_url, array( 'timeout' => 15, 'sslverify' => $this->verify_ssl(), 'body' => $api_params ) );
 
         $this->maybe_debug( $response );
 
@@ -261,6 +261,22 @@ class NF_Extension_Updater
      */
     public function get_error() {
         return Ninja_Forms()->get_setting( $this->product_name . '_license_error' );
+    }
+
+    /**
+     * Whether requests to the store verify its TLS certificate.
+     *
+     * Verified by default. Shares the filter used by EDD_SL_Plugin_Updater so
+     * one switch governs every store request carrying the license key.
+     *
+     * @since 3.15.7
+     * @see https://github.com/Saturday-Drive/ninja-forms/issues/8141
+     *
+     * @return bool
+     */
+    protected function verify_ssl(): bool
+    {
+        return (bool) apply_filters( 'edd_sl_api_request_verify_ssl', true, $this );
     }
 
     private function maybe_debug( $data, $key = 'debug' )

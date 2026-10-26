@@ -17,6 +17,7 @@ return apply_filters( 'ninja_forms_i18n_builder', array(
     'tableDeleteTable'              => esc_html__( 'Delete Table', 'ninja-forms' ),
     'tableLegacyNotice'             => esc_html__( 'This content has tables in the old editor format. Custom styles are preserved on the frontend until converted. Editing will update to the new format.', 'ninja-forms' ),
     'tableLegacyConvert'            => esc_html__( 'Convert Now', 'ninja-forms' ),
+    'tableUnsupportedNotice'        => esc_html__( 'The visual editor cannot display this content, so your message has been opened in HTML source view. Edit it there to keep your layout and styles exactly as they are.', 'ninja-forms' ),
     'tableInsertTable'              => esc_html__( 'Insert Table', 'ninja-forms' ),
     'dismiss'                       => esc_html__( 'Dismiss', 'ninja-forms' ),
     'insertLink'                    => esc_html__( 'Insert Link', 'ninja-forms' ),

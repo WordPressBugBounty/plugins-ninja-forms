@@ -659,9 +659,11 @@ final class NF_Database_Models_Form extends NF_Abstracts_Model
             unset( $import[ 'notifications' ] );
         }
 
-        // Rename `form_title` to `title`
+        // Rename legacy `form_title` to `title`, keeping a current `title` when the export has one.
         if( isset( $import[ 'settings' ][ 'form_title' ] ) ){
-            $import[ 'settings' ][ 'title' ] = $import[ 'settings' ][ 'form_title' ];
+            if( empty( $import[ 'settings' ][ 'title' ] ) ){
+                $import[ 'settings' ][ 'title' ] = $import[ 'settings' ][ 'form_title' ];
+            }
             unset( $import[ 'settings' ][ 'form_title' ] );
         }
 
