@@ -317,7 +317,8 @@ class NF_Actions_Email extends SotAction implements InterfacesSotAction
             }
 
             if (! $produced_a_recipient) {
-                $errors['invalid_email'] = sprintf(esc_html__('Your email action "%s" has an invalid value for the "%s" setting. Please check this setting and try again.', 'ninja-forms'), $action_settings['label'], $setting);
+                /* translators: 1: name of the email action. 2: name of the setting. */
+                $errors['invalid_email'] = sprintf(esc_html__('Your email action "%1$s" has an invalid value for the "%2$s" setting. Please check this setting and try again.', 'ninja-forms'), $action_settings['label'], $setting);
             }
         }
 

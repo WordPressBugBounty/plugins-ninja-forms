@@ -194,11 +194,11 @@
 </script>
 
 <script id="tmpl-nf-app-header-publish-button" type="text/template">
-    <a href="#" style="width:{{{ data.publishWidth }}} !important" class="nf-button primary {{{ data.maybeDisabled() }}} publish" title="<?php esc_html_e( 'Publish', 'ninja-forms' ); ?>" data-testid="nf-publish"><?php esc_html_e( 'PUBLISH', 'ninja-forms' ); ?></a>
+    <a href="#" style="width:{{{ data.publishWidth }}} !important" class="nf-button primary {{{ data.maybeDisabled() }}} publish" title="<?php esc_html_e( 'Publish', 'ninja-forms' ); ?>" data-testid="nf-publish"><?php esc_html_e( 'Publish', 'ninja-forms' ); ?></a>
 </script>
 
 <script id="tmpl-nf-add-header-publish-loading" type="text/template">
-    <a href="#" {{{ data.publishWidth }}} class="nf-button primary {{{ data.maybeDisabled() }}} publish" title="<?php esc_html_e( 'Loading', 'ninja-forms' ); ?>">
+    <a href="#" {{{ data.publishWidth }}} class="nf-button primary {{{ data.maybeDisabled() }}} publish" title="<?php esc_html_e( 'Loading...', 'ninja-forms' ); ?>">
         <div class="nf-loading">
             <ul>
                 <li></li>
@@ -256,7 +256,7 @@
     <tr>
         <td colspan="4">
             <h3><?php esc_html_e( 'Add form actions', 'ninja-forms' ); ?></h3>
-            <p><?php esc_html_e( "Get started by adding your first form field. Just click the plus and select the actions you want. It's that easy.", 'ninja-forms' ); ?></p>
+            <p><?php esc_html_e( 'Get started by adding your first form action. Just click the plus and select the actions you want. It\'s that easy.', 'ninja-forms' ); ?></p>
         </td>
     </tr>
 </script>
@@ -345,7 +345,7 @@
         <?php
         printf(
             /* translators: %s: URL to the Ninja Forms Developer Mode setting. */
-            wp_kses_post( __( 'For more technical features, <a href="%s">enable Developer Mode</a>.', 'ninja-forms' ) ),
+            wp_kses_post( __( 'For more technical features, <a href="%s">enable Dev Mode</a>.', 'ninja-forms' ) ),
             esc_url( add_query_arg( 'page', 'nf-settings', admin_url( 'admin.php' ) ) . '#ninja_forms[builder_dev_mode]' )
         );
         ?>
@@ -523,7 +523,7 @@
 <script id="tmpl-nf-drawer-header-view-changes" type="text/template">
     <header class="nf-drawer-header">
         <div>
-            <a href="#" title="<?php esc_html_e( 'Undo All', 'ninja-forms' ); ?>" class="nf-button secondary undoChanges" style="float:left;" tabindex="-1"><span class="dashicons dashicons-backup"></span><?php esc_html_e( ' Undo All', 'ninja-forms' ); ?></a>
+            <a href="#" title="<?php esc_html_e( 'Undo All', 'ninja-forms' ); ?>" class="nf-button secondary undoChanges" style="float:left;" tabindex="-1"><span class="dashicons dashicons-backup"></span> <?php esc_html_e( 'Undo All', 'ninja-forms' ); ?></a>
         </div>
         <a href="#" title="<?php esc_html_e( 'Done', 'ninja-forms' ); ?>" class="nf-button primary nf-close-drawer" tabindex="-1"><?php esc_html_e( 'Done', 'ninja-forms' ); ?></a>
     </header>
@@ -638,7 +638,7 @@
         {{{ data.renderSetting() }}}
         <span class="nf-setting-error"></span>
         <span class="nf-dev-import-options" style="display:none">
-            <?php esc_html_e( 'Please use the following format', 'ninja-forms' ); ?>:
+            <?php esc_html_e( 'Please use the following format:', 'ninja-forms' ); ?>
             <br>
             <br>
             <strong><?php esc_html_e( 'Label, Value, Calc Value', 'ninja-forms' ); ?></strong>
@@ -1092,7 +1092,7 @@ Label Three
         Text
         <input type="url" class="widefat code link-text"> <br />
         <label>
-            <input type="checkbox" class="link-new-window"><?php esc_html_e( ' Open in new window', 'ninja-forms' ); ?>
+            <input type="checkbox" class="link-new-window"> <?php esc_html_e( 'Open in new window', 'ninja-forms' ); ?>
         </label>
         <input type="button" class="cancel-link extra" value="Cancel">
         <input type="button" class="insert-link extra" value="Insert">

@@ -4,7 +4,7 @@ Tags: forms, form builder, contact form, lead form, calculator form
 
 Requires at least: 6.9
 Tested up to: 7.1
-Stable tag: 3.15.7
+Stable tag: 3.16.0
 Requires PHP: 7.4
 
 License: GPLv2 or later
@@ -100,6 +100,17 @@ Some capabilities are add-ons rather than part of the free plugin: conditional l
 Free technical support for every user, whether or not you have bought anything, from a team spanning four continents, Monday to Friday. A full documentation library. Regular updates. Translated into more than 24 languages by the WordPress Polyglots community, with WPML as a long-term partner for more. And an ecosystem-aware approach: we know it is not just you and Ninja Forms, so we work to play well with the rest of your site.
 
 [You will always have a direct line to us right here.](https://ninjaforms.com/contact/?utm_source=WordPress.org&utm_medium=Plugin+readme&utm_campaign=Support)
+
+== Payments ==
+
+Accept payments and donations on your forms by connecting your own PayPal account. There is no upfront cost and no monthly fee. Ninja Forms adds a 1.9% per-transaction fee on top of PayPal's standard processing fees.
+
+== External Services ==
+
+This plugin's payment features use a connection service at paypal.ninjaforms.com, operated by Saturday Drive, Inc., the makers of Ninja Forms. The plugin contacts this service when you connect a PayPal account and when a visitor makes a payment on your form. It sends the payment amount, the currency, your PayPal merchant ID, and your site's return address, which the service uses to create the order with PayPal. The contents of form submissions are never sent to this service.
+
+Terms of use: https://ninjaforms.com/terms-conditions/?utm_source=WordPress.org&utm_medium=Plugin+readme&utm_campaign=External+Services&utm_content=Terms
+Privacy policy: https://ninjaforms.com/privacy-policy/?utm_source=WordPress.org&utm_medium=Plugin+readme&utm_campaign=External+Services&utm_content=Privacy
 
 == Additional Branding and Trademark Information ==
 
@@ -216,38 +227,42 @@ This section describes how to install the plugin and get it working.
 7. A finished form on the front end, with a live total, a star rating, and a signature
 
 == Upgrade Notice ==
-= 3.15.7 (2 November 2026) =
-
-*Security Enhancements:*
-
-- verify the license server's certificate when checking and activating licenses
-- apply the site's unfiltered HTML restriction to the Not Logged-In and Limit Reached messages
-- show option labels in form builder dropdown settings as plain text
-- harden merge tag handling of submitted values, visitor IP address, referring page and post details
-- enforce the "Require user to be logged in" setting when a form is submitted
+= 3.16.0 (02 November 2026) =
 
 *Bug Fixes:*
 
-- keep hand-coded tables intact in the Email action message editor
-- load the Email action rich text editor correctly when a message contains older table markup
-- keep Checkbox List calculations working when an option has a blank calc value
-- count only typed characters toward the character limit on fields with an input mask
-- show an error when a favorite field could not be deleted instead of appearing to remove it
-- keep a form's display name when it is imported
-- fill in {submission:sequence} in emails re-sent from the Submissions page
-- keep date values in the correct format when editing a submission
-- keep calculated values in an HTML field when an unrelated field in it changes
-- let Date fields created before date modes existed pass required validation
-- register the first keystroke or paste in an empty rich text Paragraph Text field
-- remove PHP warnings when a form contains a field from a deactivated add-on
-- prevent a fatal error on submission when a Collect Payment action's payment add-on is inactive
-- keep spacing intact when Paragraph Text reaches its word limit
-- remove PHP warnings when exporting submissions with an empty Repeatable Fieldset
-- stop the form builder freezing when adding or moving fields in a large Repeatable Fieldset
-- prevent a page error when a {querystring:} merge tag receives a list value
+- show translated text in places that stayed in English because of incorrect text domains or missing script translation folders
+- show Ninja Forms in each user's profile language when it differs from the site language
+- stop WordPress 6.7 and later logging a "translation loading was triggered too early" notice for Ninja Forms
+- export a Checkbox field value that was saved as a word in another language exactly as it was saved
+- list Timor-Leste once in country lists, and sort countries with accented names in alphabetical order
+
+*Enhancements:*
+
+- connect a PayPal account from the new Payments page and take payments on forms without an add-on
+- bundle translations for 41 languages, using WordPress.org's wording where it exists and the bundled translation where it doesn't
+- make every Ninja Forms string translatable on WordPress.org again, including those added since 3.6.9
+- reword English strings so they translate accurately
 
 
 == Changelog ==
+= 3.16.0 (02 November 2026) =
+
+*Bug Fixes:*
+
+- show translated text in places that stayed in English because of incorrect text domains or missing script translation folders
+- show Ninja Forms in each user's profile language when it differs from the site language
+- stop WordPress 6.7 and later logging a "translation loading was triggered too early" notice for Ninja Forms
+- export a Checkbox field value that was saved as a word in another language exactly as it was saved
+- list Timor-Leste once in country lists, and sort countries with accented names in alphabetical order
+
+*Enhancements:*
+
+- connect a PayPal account from the new Payments page and take payments on forms without an add-on
+- bundle translations for 41 languages, using WordPress.org's wording where it exists and the bundled translation where it doesn't
+- make every Ninja Forms string translatable on WordPress.org again, including those added since 3.6.9
+- reword English strings so they translate accurately
+
 = 3.15.7 (2 November 2026) =
 
 *Security Enhancements:*

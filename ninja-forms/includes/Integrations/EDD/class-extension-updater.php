@@ -201,7 +201,8 @@ class NF_Extension_Updater
             return $default;
         }
 
-        return new WP_Error( 'php_minimum_version', sprintf( esc_html__( 'The new version requires at least PHP %s, and your PHP version is %s.', 'ninja-forms' ), $php_requires, PHP_VERSION ), esc_html__( 'Please contact your host to upgrade your site\'s PHP version.' ) );
+        /* translators: 1: required PHP version. 2: PHP version of the site. */
+        return new WP_Error( 'php_minimum_version', sprintf( esc_html__( 'The new version requires at least PHP %1$s, and your PHP version is %2$s.', 'ninja-forms' ), $php_requires, PHP_VERSION ), esc_html__( 'Please contact your host to upgrade your site\'s PHP version.', 'ninja-forms' ) );
     }
 
     /**
@@ -226,15 +227,21 @@ class NF_Extension_Updater
 
         remove_action( 'after_plugin_row_' . plugin_basename( $this->file ), 'wp_plugin_update_row', 10 );
         
+        /* translators: 1: required PHP version. 2: PHP version of the site. */
         echo '<tr class="update-error">
                 <td colspan="5" style="background-color:#fef7f1;">
                     <div class="update-message notice inline notice-error notice-alt" style="margin: 10px 0 5px;">
                         <p>
                             ' . sprintf( esc_html__( 'An update is available for %s, however, you are not able to update at this time.', 'ninja-forms' ), 'Ninja Forms - ' . $this->product_nice_name ) . '
                             <br />
-                            <strong>' . sprintf( esc_html__( 'The new version requires at least PHP %s, and your PHP version is %s.', 'ninja-forms' ), $php_requires, PHP_VERSION ) . '</strong>
+                            <strong>' . sprintf( esc_html__( 'The new version requires at least PHP %1$s, and your PHP version is %2$s.', 'ninja-forms' ), $php_requires, PHP_VERSION ) . '</strong>
                             <br />
-                            ' . sprintf( esc_html__( 'Please contact your host to upgrade your site\'s PHP version. %sRead more about updating your PHP version and WordPress%s.' ), '<a href="https://wordpress.org/about/requirements/" target="_blank">', '</a>' ) . '
+                            ' . sprintf(
+                                /* translators: 1: opening tag of the link to the WordPress requirements page. 2: closing link tag. */
+                                esc_html__( 'Please contact your host to upgrade your site\'s PHP version. %sRead more about updating your PHP version and WordPress%s.', 'ninja-forms' ),
+                                '<a href="https://wordpress.org/about/requirements/" target="_blank">',
+                                '</a>'
+                            ) . '
                         </p>
                     </div>
                 </td>

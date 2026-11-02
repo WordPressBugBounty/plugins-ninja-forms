@@ -977,7 +977,8 @@ class NF_Admin_Processes_ImportForm extends NF_Abstracts_BatchProcess
             $passwordconfirm = array_merge( $field, array(
                 'id' => '',
                 'type' => 'passwordconfirm',
-                'label' => $field[ 'label' ] . ' ' . esc_html__( 'Confirm', 'ninja-forms' ),
+                /* translators: %s is the label of the field that must be typed a second time, for example "Email". */
+                'label' => sprintf( esc_html__( 'Confirm %s', 'ninja-forms' ), $field[ 'label' ] ),
                 'confirm_field' => 'password_' . $field[ 'id' ]
             ));
             $field[ 'new_fields' ][] = $passwordconfirm;

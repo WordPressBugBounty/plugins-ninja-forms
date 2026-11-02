@@ -118,13 +118,13 @@ class NF_Routes_Submissions extends NF_Abstracts_Routes
                 ],
                 'start_date' => [
                     'required' => false,
-                    'description' => esc_attr__('strtotime($date) that represents the start date we will retrieve submssions at.', 'ninja-forms'),
+                    'description' => esc_attr__('Start date of the submissions to retrieve, as a Unix timestamp.', 'ninja-forms'),
                     'type' => 'string',
                     'validate_callback' => 'rest_validate_request_arg',
                 ],
                 'end_date' => [
                     'required' => false,
-                    'description' => esc_attr__('strtotime($date) that represents the end date we will retrieve submssions at.', 'ninja-forms'),
+                    'description' => esc_attr__('End date of the submissions to retrieve, as a Unix timestamp.', 'ninja-forms'),
                     'type' => 'string',
                     'validate_callback' => 'rest_validate_request_arg',
                 ],

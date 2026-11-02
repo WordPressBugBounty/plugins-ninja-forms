@@ -34,10 +34,10 @@ class NF_Fields_Repeater extends NF_Abstracts_Field
         $this->_settings[ 'button_text'] = array(
             'name'      => 'button_text',
             'type'      => 'textbox',
-            'label'     => esc_html__( 'Button text', 'ninja-forms' ),
+            'label'     => esc_html__( 'Button Text', 'ninja-forms' ),
             'width'     => 'one-half',
             'group'     => 'primary',
-            'value'     => esc_html__("Add Fieldset"),
+            'value'     => esc_html__("Add Fieldset", 'ninja-forms'),
             'help'      => esc_html__( 'Text used for the button that adds a fieldset.', 'ninja-forms' ),
         );
     }

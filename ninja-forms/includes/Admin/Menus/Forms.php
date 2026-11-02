@@ -375,7 +375,7 @@ final class NF_Admin_Menus_Forms extends NF_Abstracts_Menu
         wp_enqueue_script( 'quill', Ninja_Forms::$url . 'assets/js/lib/quill.min.js', array( 'jquery', 'nf-builder-deps' ) );
         wp_enqueue_script( 'quill-blot-formatter', Ninja_Forms::$url . 'assets/js/lib/quill-blot-formatter.min.js', array( 'quill' ) );
 
-        wp_enqueue_script( 'nf-builder', Ninja_Forms::$url . 'assets/js/min/builder.js', array( 'jquery', 'jquery-ui-core', 'jquery-ui-draggable', 'jquery-ui-droppable', 'jquery-ui-sortable', 'jquery-effects-bounce', 'wp-color-picker', 'quill-blot-formatter', 'nf-modal-defaults' ), Ninja_Forms::asset_version( 'assets/js/min/builder.js' ) );
+        wp_enqueue_script( 'nf-builder', Ninja_Forms::$url . 'assets/js/min/builder.min.js', array( 'jquery', 'jquery-ui-core', 'jquery-ui-draggable', 'jquery-ui-droppable', 'jquery-ui-sortable', 'jquery-effects-bounce', 'wp-color-picker', 'quill-blot-formatter', 'nf-modal-defaults' ), Ninja_Forms::asset_version( 'assets/js/min/builder.min.js' ) );
         wp_localize_script( 'nf-builder', 'nfi18n', Ninja_Forms::config( 'i18nBuilder' ) );
 
         $home_url = parse_url( home_url() );
