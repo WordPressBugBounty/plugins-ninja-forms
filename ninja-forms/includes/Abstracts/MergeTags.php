@@ -214,9 +214,57 @@ abstract class NF_Abstracts_MergeTags
 
             $callback = $this->extractCallback($merge_tag,$matches);
 
+            if( ! empty( $merge_tag[ 'generate_per_occurrence' ] ) ){
+                $subject = $this->replaceEachOccurrence( $merge_tag[ 'tag' ], $callback, $subject );
+                continue;
+            }
+
             $replace = $this->getReplacement($callback);
-            
+
             $subject = str_replace( $merge_tag[ 'tag' ], $replace, $subject );
+        }
+
+        return $subject;
+    }
+
+    /**
+     * Replace every occurrence of one merge tag with its own generated value.
+     *
+     * replace() above calls a tag's callback once and substitutes that single
+     * value into every occurrence, which is what nearly every merge tag needs:
+     * {other:date} written twice in one value has to read the same both times.
+     *
+     * A tag whose configuration declares 'generate_per_occurrence' promises a
+     * freshly generated value each time it is written, so its callback runs
+     * once per occurrence instead. {other:random} is such a tag: repeating it
+     * in one value used to yield the same string every time (#7571).
+     *
+     * @param string $tag
+     * @param string|array $callback
+     * @param string $subject
+     * @return string
+     */
+    protected function replaceEachOccurrence( $tag, $callback, $subject )
+    {
+        if( ! is_string( $subject ) || ! is_string( $tag ) || '' === $tag ) return $subject;
+
+        $offset = 0;
+        $length = strlen( $tag );
+
+        while( FALSE !== ( $position = strpos( $subject, $tag, $offset ) ) ){
+
+            $replace = $this->getReplacement( $callback );
+
+            if( ! is_string( $replace ) ){
+                $replace = strval( $replace );
+            }
+
+            $subject = substr_replace( $subject, $replace, $position, $length );
+
+            // Resume after the substituted value: a generated value cannot
+            // contain a merge tag of its own, and skipping it keeps the scan
+            // moving forward even when the replacement is empty.
+            $offset = $position + strlen( $replace );
         }
 
         return $subject;

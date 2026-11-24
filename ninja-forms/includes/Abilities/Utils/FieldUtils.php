@@ -217,7 +217,7 @@ function ninja_forms_ability_persist_field( $form_id, $field_data, $insertion_po
 		// HTML fields and other fields can use 'default' directly
 		// For HTML fields, don't sanitize - we want to preserve HTML tags
 		if ( isset( $field_data['type'] ) && $field_data['type'] === 'html' ) {
-			$default_content = wp_kses_post( $field_data['default'] );
+			$default_content = \WPN_Helper::kses_post_rich_text( $field_data['default'] );
 			$field->update_setting( 'default', $default_content );
 			// CRITICAL: HTML fields need 'value' set for frontend rendering
 			// The JavaScript template uses {{{ data.value }}}, not data.default

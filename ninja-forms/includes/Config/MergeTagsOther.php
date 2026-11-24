@@ -83,7 +83,14 @@ return apply_filters( 'ninja_forms_merge_tags_other', array(
         'id'        => 'mergetag_random',
         'tag'       => '{other:random}',
         'label'     => esc_html__( 'Random 5 character string.', 'ninja-forms' ),
-        'callback'  => 'mergetag_random'
+        'callback'  => 'mergetag_random',
+
+        /*
+         * A new string every time the tag is written, so repeating it in one
+         * field builds a longer random value instead of the same string twice
+         * (#7571).
+         */
+        'generate_per_occurrence' => true
     ),
 
     /*

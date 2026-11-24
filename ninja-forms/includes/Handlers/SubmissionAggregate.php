@@ -280,6 +280,24 @@ class SubmissionAggregate
                 
                 $fieldOptionDefinition = $nfField->get_setting('options',[]);
 
+                // A site may supply a list field's choices at render time rather
+                // than saving them in the form, which is what the documented
+                // dynamic-list-fields recipe does.  Those choices are part of the
+                // field's real set of options, so a submission can only be read
+                // and edited correctly once they are asked for here too — the
+                // visitor-facing form has always asked.  #7869
+                $fieldOptionDefinition = \apply_filters(
+                    'ninja_forms_render_options',
+                    $fieldOptionDefinition,
+                    $fieldSettings
+                );
+
+                $fieldOptionDefinition = \apply_filters(
+                    'ninja_forms_render_options_' . $nfField->get_setting('type'),
+                    $fieldOptionDefinition,
+                    $fieldSettings
+                );
+
                 // A field type whose choices are not stored in the form — the
                 // Terms List field reads them from the site's taxonomy — supplies
                 // them here, so a submission reads as the chosen label rather
@@ -295,6 +313,10 @@ class SubmissionAggregate
                 $fieldSettings['options'] = $fieldOptionDefinition;
                 $fieldsetRepeaterFields = $nfField->get_setting('fields',[]);
 
+                // Each field's choices are its own: start empty every time, or a
+                // field inherits the choices of the field before it. #7869
+                $optionsCollection = [];
+
                 if(!empty($fieldOptionDefinition)){
                     foreach($fieldOptionDefinition as $optionDefinition){
                         $options = $this->extractOptionsFromDefinition($optionDefinition);
@@ -302,8 +324,6 @@ class SubmissionAggregate
                          $optionsCollection[]=$options;
                     }
 
-                }else{
-                    $optionsCollection = [];
                 }
 
                 $array = [

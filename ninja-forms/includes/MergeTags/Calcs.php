@@ -95,6 +95,101 @@ class NF_MergeTags_Calcs extends NF_Abstracts_MergeTags
         );
     }
     
+    /**
+     * Order calculations so each one is evaluated after the calculations it uses.
+     *
+     * Calculations reference each other with {calc:name} merge tags, which only
+     * resolve once the referenced calculation has been set. Evaluating in the
+     * builder's list order therefore counted any later-listed reference as 0.
+     * References inside a loop (A uses B, B uses A, or a calc using itself) are
+     * left for the caller's scrub, so they still count as 0.
+     *
+     * @param array $calculations Calculation settings in builder order.
+     * @return array The same calculations in evaluation order.
+     */
+    public static function get_evaluation_order( $calculations )
+    {
+        $calculations = array_values( (array) $calculations );
+
+        // Name => position of the first calculation with that name.
+        $by_name = array();
+        foreach ( $calculations as $index => $calc ) {
+            if ( isset( $calc['name'] ) && ! isset( $by_name[ $calc['name'] ] ) ) {
+                $by_name[ $calc['name'] ] = $index;
+            }
+        }
+
+        // Positions of the calculations each calculation references.
+        $references = array();
+        foreach ( $calculations as $index => $calc ) {
+            $references[ $index ] = array();
+            $eq = isset( $calc['eq'] ) && is_string( $calc['eq'] ) ? $calc['eq'] : '';
+            preg_match_all( '/{calc:([^}]*)}/', $eq, $matches );
+            foreach ( $matches[1] as $reference ) {
+                if ( ! isset( $by_name[ $reference ] ) && ':2' === substr( $reference, -2 ) ) {
+                    $reference = substr( $reference, 0, -2 );
+                }
+                if ( isset( $by_name[ $reference ] ) ) {
+                    $references[ $index ][] = $by_name[ $reference ];
+                }
+            }
+        }
+
+        // Depth-first walk with an explicit stack, so long chains never nest
+        // calls. Each calculation is entered once; a reference back into an
+        // entered calculation (a loop) is skipped.
+        $ordered = array();
+        $entered = array();
+
+        foreach ( array_keys( $calculations ) as $start ) {
+            if ( isset( $entered[ $start ] ) ) {
+                continue;
+            }
+            $entered[ $start ] = true;
+            $stack = array( array( $start, 0 ) );
+
+            while ( $stack ) {
+                $top = count( $stack ) - 1;
+                list( $index, $next ) = $stack[ $top ];
+
+                if ( $next < count( $references[ $index ] ) ) {
+                    $stack[ $top ][1]++;
+                    $reference = $references[ $index ][ $next ];
+                    if ( ! isset( $entered[ $reference ] ) ) {
+                        $entered[ $reference ] = true;
+                        $stack[] = array( $reference, 0 );
+                    }
+                    continue;
+                }
+
+                array_pop( $stack );
+                $ordered[] = $calculations[ $index ];
+            }
+        }
+
+        return $ordered;
+    }
+
+    /**
+     * Re-key calculation results into the builder's list order.
+     *
+     * @param array $results Calculation results keyed by name, in evaluation order.
+     * @param array $calculations Calculation settings in builder order.
+     * @return array
+     */
+    public static function restore_builder_order( $results, $calculations )
+    {
+        $ordered = array();
+        foreach ( (array) $calculations as $calc ) {
+            if ( isset( $calc['name'] ) && array_key_exists( $calc['name'], $results ) ) {
+                $ordered[ $calc['name'] ] = $results[ $calc['name'] ];
+            }
+        }
+
+        // Anything without a matching setting keeps its place at the end.
+        return $ordered + $results;
+    }
+
     public function get_calc_value( $key )
     {
         $return = null;

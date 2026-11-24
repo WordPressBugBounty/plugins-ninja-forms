@@ -12,6 +12,23 @@ class NF_Admin_Processes_ImportForm extends NF_Abstracts_BatchProcess
     protected $form;
 
     /**
+     * Whether a <style> or <script> block was removed from field content on this import.
+     *
+     * Tracked here during startup, then carried on $this->form so it survives the batch's
+     * later steps, and reported once in cleanup(). See issue #8162.
+     *
+     * @var bool
+     */
+    protected $code_blocks_removed = false;
+
+    /**
+     * Whether field content held an opening <style>/<script> tag with no closing tag.
+     *
+     * @var bool
+     */
+    protected $unclosed_code_block = false;
+
+    /**
      * Store an array of columns that we want to store in our table rather than meta.
      *
      * This array stores the column name and the name of the setting that it maps to.
@@ -108,8 +125,10 @@ class NF_Admin_Processes_ImportForm extends NF_Abstracts_BatchProcess
          * Sanitize labels if the extra checks checkbox is not checked
          * OR if the current user does not have permissions
          */
-        if( ( isset($_POST[ 'extraData' ][ 'extraChecksOff' ]) && $_POST[ 'extraData' ][ 'extraChecksOff' ] === "false" )
-            || WPN_Helper::maybe_disallow_unfiltered_html_for_sanitization() )
+        $sanitize_field_content = ( isset($_POST[ 'extraData' ][ 'extraChecksOff' ]) && $_POST[ 'extraData' ][ 'extraChecksOff' ] === "false" )
+            || WPN_Helper::maybe_disallow_unfiltered_html_for_sanitization();
+
+        if( $sanitize_field_content )
             {
                 $data = $this->sanitize_field_settings($data);
 
@@ -121,6 +140,18 @@ class NF_Admin_Processes_ImportForm extends NF_Abstracts_BatchProcess
 
         // $data is now a form array.
         $this->form = $data;
+
+        /**
+         * Carry the sanitization decision and what it removed across the batch's steps.
+         *
+         * The import runs over several requests; $this->form is the only state that
+         * survives them (it is saved to the nf_import_form option between steps). The
+         * field meta is written on a later step than this one, and the message about
+         * removed code blocks is shown on the last one. Field labels read the same
+         * decision in insert_fields(). See issues #8162 and #8164.
+         */
+        $this->form[ 'sanitize_field_content' ] = $sanitize_field_content;
+        $this->remember_removed_code_blocks();
 
         /**
          * Check to see if we've got new field columns.
@@ -160,7 +191,7 @@ class NF_Admin_Processes_ImportForm extends NF_Abstracts_BatchProcess
                 foreach($field_settings_array as $field_setting_key => $field_setting_value){
                     if(is_string($field_setting_value)){
                         if ($field_setting_key === 'default' && in_array($import_field_type, ['html', 'note', 'textarea'])) {
-                            $data[ 'fields' ][$field_index][ $field_setting_key ] = wp_kses_post($field_setting_value);
+                            $data[ 'fields' ][$field_index][ $field_setting_key ] = $this->sanitize_field_content($field_setting_value);
                         } else {
                             $data[ 'fields' ][$field_index][ $field_setting_key ] = WPN_Helper::sanitize_string_setting_value($field_setting_key, $field_setting_value);
                         }
@@ -172,6 +203,48 @@ class NF_Admin_Processes_ImportForm extends NF_Abstracts_BatchProcess
 
         return $data;
     }
+
+    /**
+     * Decide what one imported field label is stored as.
+     *
+     * Without Trusted source, or for anyone WordPress does not trust with raw HTML, the
+     * label is stored as plain text exactly as before.
+     *
+     * With Trusted source, checked by a user holding unfiltered_html on a site that has not
+     * defined DISALLOW_UNFILTERED_HTML, the label keeps the markup the Import / Export
+     * screen promises to leave intact - the tags WordPress allows in post content, and
+     * nothing that can execute. wp_kses_post() draws that line, so a <strong> survives while
+     * a <script>, an iframe, an onmouseover handler and a javascript: URL do not.
+     *
+     * A label is rendered on the front end without escaping, which is why this stays an
+     * allowlist rather than passing the import file's markup straight through.
+     *
+     * The trust decision itself is made once in startup() and carried on $this->form,
+     * because this runs on a later request. A missing decision is treated as "sanitize":
+     * an import already in flight when the plugin updated must not be handed the relaxed
+     * path by accident.
+     *
+     * @see https://github.com/Saturday-Drive/ninja-forms/issues/8164
+     *
+     * @param string $label Label as it appears in the import file.
+     * @return string
+     */
+    protected function sanitize_imported_label( $label )
+    {
+        $sanitize = ! isset( $this->form[ 'sanitize_field_content' ] )
+            || $this->form[ 'sanitize_field_content' ];
+
+        if ( $sanitize ) {
+            return WPN_Helper::sanitize_string_setting_value( 'label', $label );
+        }
+
+        // Closed <style>/<script> elements go whole, contents included; kses would keep
+        // their code as label text. An unclosed tag is left alone. See issue #8162.
+        $stripped = WPN_Helper::strip_code_blocks( $label );
+
+        return wp_kses_post( $stripped[ 'content' ] );
+    }
+
 
     /**
      * On processing steps after the first, we need to grab our data from our saved option.
@@ -241,6 +314,83 @@ class NF_Admin_Processes_ImportForm extends NF_Abstracts_BatchProcess
         delete_option( 'nf_import_form' );
         // Return our new Form ID
         $this->response[ 'form_id' ] = $this->form[ 'ID' ];
+
+        $this->report_removed_code_blocks();
+    }
+
+    /**
+     * Clean one field's rich text content, remembering what had to be removed.
+     *
+     * <style> and <script> contents are removed first, because wp_kses_post() drops those
+     * tags but keeps the code between them, which then renders as visible text on the
+     * customer's form (issue #8162). wp_kses_post() still runs afterwards and still has
+     * the final word on what is allowed.
+     *
+     * @param string $value Field content from the import file.
+     * @return string
+     */
+    protected function sanitize_field_content( $value )
+    {
+        $report = WPN_Helper::strip_code_blocks( $value );
+
+        if ( $report[ 'removed' ] ) {
+            $this->code_blocks_removed = true;
+        }
+
+        if ( $report[ 'unclosed' ] ) {
+            $this->unclosed_code_block = true;
+        }
+
+        // Colours are rewritten into a spelling kses accepts, then kses runs. See #7579.
+        return WPN_Helper::kses_post_rich_text( $report[ 'content' ] );
+    }
+
+    /**
+     * Fold this step's removals into the record carried across the batch.
+     *
+     * Each step runs in its own request with a fresh instance, so this only ever turns a
+     * flag on. Assigning the instance value directly would let a later step - one that
+     * finds nothing, because an earlier step already cleaned the content - erase what an
+     * earlier step recorded. See issue #8162.
+     *
+     * @return void
+     */
+    protected function remember_removed_code_blocks()
+    {
+        $this->form[ 'code_blocks_removed' ] = ! empty( $this->form[ 'code_blocks_removed' ] ) || $this->code_blocks_removed;
+        $this->form[ 'unclosed_code_block' ] = ! empty( $this->form[ 'unclosed_code_block' ] ) || $this->unclosed_code_block;
+    }
+
+    /**
+     * Tell the person importing what was removed from their form, once, at the end.
+     *
+     * These are warnings, not failures: the form imported. The import screen renders them
+     * beside the success message. See issue #8162.
+     *
+     * @return void
+     */
+    protected function report_removed_code_blocks()
+    {
+        if ( ! empty( $this->form[ 'code_blocks_removed' ] ) ) {
+            $message = esc_html__( "Some CSS or JavaScript was removed from this form's HTML for security.", 'ninja-forms' );
+
+            /**
+             * Only mention the Trusted source checkbox to someone who can see it. It is
+             * rendered only for users WordPress trusts with raw HTML.
+             */
+            if ( ! WPN_Helper::maybe_disallow_unfiltered_html_for_sanitization() ) {
+                $message .= ' ' . esc_html__( 'If this form came from a source you trust, import it again with "Trusted source" checked to keep it.', 'ninja-forms' );
+            }
+
+            $this->add_error( 'style_or_script_removed', $message );
+        }
+
+        if ( ! empty( $this->form[ 'unclosed_code_block' ] ) ) {
+            $this->add_error(
+                'unclosed_style_or_script',
+                esc_html__( 'This form has a style or script tag that was never closed, so nothing was removed from that field. Fix the tag in your export file and import again.', 'ninja-forms' )
+            );
+        }
     }
 
     /*
@@ -498,6 +648,21 @@ class NF_Admin_Processes_ImportForm extends NF_Abstracts_BatchProcess
             // Remove a field ID if we have one set.
             unset( $field_settings[ 'id' ] );
             $field_settings[ 'parent_id' ] = $this->form[ 'ID' ];
+
+            /**
+             * Settle the label once, before anything is written.
+             *
+             * A label is stored twice: in the nf3_fields mirror columns below and in an
+             * nf3_field_meta row further down. The columns used to be written from the
+             * value as imported while the meta loop sanitized its own copy, so one import
+             * left the two holding different text - and the meta row, the copy Ninja Forms
+             * reads, was the one that lost the markup. Deciding the value here means both
+             * take the same string. See issue #8164.
+             */
+            if ( isset( $field_settings[ 'label' ] ) && is_string( $field_settings[ 'label' ] ) ) {
+                $field_settings[ 'label' ] = $this->sanitize_imported_label( $field_settings[ 'label' ] );
+            }
+
             // Array that tracks which settings need to be meta and which are columns.
             $field_meta = $field_settings;
             $insert_columns = array();
@@ -547,10 +712,25 @@ class NF_Admin_Processes_ImportForm extends NF_Abstracts_BatchProcess
                 }
 
                 $meta_value = maybe_serialize( $meta_value );
-                if(is_string($meta_value)){
+                /**
+                 * 'label' is absent here on purpose: it was settled once above, for both
+                 * storage locations at once. Sanitizing it again would strip the markup a
+                 * Trusted source import is meant to keep. See issue #8164.
+                 */
+                if(is_string($meta_value) && 'label' !== $meta_key){
                     $import_meta_field_type = isset($field_meta['type']) ? $field_meta['type'] : '';
                     if ($meta_key === 'default' && in_array($import_meta_field_type, ['html', 'note', 'textarea'])) {
-                        $meta_value = wp_kses_post($meta_value);
+                        /**
+                         * Honour the same Trusted source decision startup() made.
+                         *
+                         * This pass used to sanitize unconditionally, so checking Trusted
+                         * source never actually preserved field content the way the import
+                         * screen promises. See issue #8162.
+                         */
+                        if ( ! isset( $this->form[ 'sanitize_field_content' ] ) || $this->form[ 'sanitize_field_content' ] ) {
+                            $meta_value = $this->sanitize_field_content($meta_value);
+                            $this->remember_removed_code_blocks();
+                        }
                     } else {
                         $meta_value = WPN_Helper::sanitize_string_setting_value($meta_key, $meta_value);
                     }

@@ -114,6 +114,29 @@ var nfRecaptcha = Marionette.Object.extend( {
 				callback: jQuery( this ).data( 'callback' )
 			};
 
+			/*
+			 * An invisible widget is executed by us rather than by a click, so
+			 * a refusal from Google is never seen by the visitor: the field
+			 * simply stays empty and the form reports a required field for the
+			 * rest of the page's life. Google issues separate v2 keys for the
+			 * checkbox and for Invisible reCAPTCHA, and a checkbox key set to
+			 * Invisible is refused exactly this way, which is the common cause.
+			 *
+			 * Google reports the refusal through 'error-callback', so ask for
+			 * it and turn it into an error the visitor and the site owner can
+			 * read. The error also keeps the form from submitting on its own:
+			 * controllers/formErrors.js raises a form-level error for any field
+			 * error, and controllers/submit.js refuses to submit while one is
+			 * present. See issue #7820.
+			 */
+			if ( opts.size === 'invisible' ) {
+				opts[ 'error-callback' ] = ( function( fieldID ) {
+					return function() {
+						nf_recaptcha_unavailable( fieldID );
+					};
+				} )( opts.fieldid );
+			}
+
 			var grecaptchaID = grecaptcha.render( jQuery( this )[0], opts );
 
 			if ( opts.size === 'invisible' ) {
@@ -123,7 +146,7 @@ var nfRecaptcha = Marionette.Object.extend( {
 				} catch( e ){
 					console.log( 'Notice: Error trying to execute grecaptcha.' );
 				}
-			}	
+			}
 		} );
 	}
 } );
@@ -176,6 +199,49 @@ var nfRenderTurnstile = function() {
 if (typeof nf_reprocess_recaptcha === 'undefined') {
 	var nf_reprocess_recaptcha = ( grecaptchaID ) => {
 		grecaptcha.execute( grecaptchaID );
+	};
+}
+
+/*
+ * Report that Google refused to run a reCAPTCHA widget.
+ *
+ * The notice belongs to the form, not to the reCAPTCHA field. A field error
+ * would be wrong twice over: it would add "Please correct errors before
+ * submitting this form" and grey out the submit button, and neither the error
+ * nor the correction is the visitor's. A form-level error still stops the
+ * submission -- controllers/submit.js refuses to submit while one is present --
+ * without accusing anyone.
+ *
+ * Only someone who can manage forms is shown the diagnosis, because they are
+ * the only one who can act on it. See issue #7820.
+ */
+if (typeof nf_recaptcha_unavailable === 'undefined') {
+	var nf_recaptcha_unavailable = ( fieldID ) => {
+		var fieldModel = nfRadio.channel( 'fields' ).request( 'get:field', fieldID );
+		if ( ! fieldModel ) {
+			return;
+		}
+
+		var formID = fieldModel.get( 'formID' );
+		var formModel = nfRadio.channel( 'form-' + formID ).request( 'get:form' );
+		if ( 'undefined' === typeof formModel ) {
+			return;
+		}
+
+		/*
+		 * Remembered on the field so that controllers/fieldRecaptcha.js can
+		 * answer the required-field check for it, and so that the notice can be
+		 * restored during a submission attempt: controllers/submit.js clears
+		 * form-level errors left over from an earlier attempt before it
+		 * validates, and this one is live state rather than leftovers.
+		 */
+		fieldModel.set( 'recaptchaUnavailable', true );
+
+		var settings = formModel.get( 'settings' );
+		var canManage = 'undefined' !== typeof nfFrontEnd && nfFrontEnd.user_can_manage_forms;
+		var message = canManage ? settings.recaptchaUnavailableManager : settings.recaptchaUnavailable;
+
+		nfRadio.channel( 'form-' + formID ).request( 'add:error', 'recaptcha-unavailable', message );
 	};
 }
 

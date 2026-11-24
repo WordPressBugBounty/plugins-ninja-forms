@@ -114,9 +114,177 @@ class NF_Database_FieldsController
         $this->run_insert_field_meta_query();
         $this->run_update_field_meta_query();
 
+        /*
+         * SUBMISSION DATA FOR FIELDS REMOVED FROM A FIELDSET
+         *
+         * Before the renumbering below: that gives a child with no dotted id the
+         * next free number by position, which can be a number whose stored
+         * answers belong to a different child.
+         */
+        $this->remove_orphaned_fieldset_submission_data();
+
         //Set IDs to repeater child fields if needed
         $this->check_update_new_repeater_field_ids();
-        
+    }
+
+    /**
+     * Delete the answers collected by fieldset children this form no longer has.
+     *
+     * The builder promises, before removing a fieldset field that holds data,
+     * that "This will also DELETE all submission data associated with this
+     * field." Until issue #8175 nothing acted on that promise for a fieldset
+     * child: a Repeatable Fieldset's children are not rows in nf3_fields but
+     * entries in the parent's `fields` setting, so removing one never reaches
+     * `deleted_fields` or NF_Database_Models_Field::delete(). The answers
+     * stayed in the parent's record indefinitely, invisible on every admin
+     * screen.
+     *
+     * A whole fieldset's answers live in one `_field_{parentId}` postmeta
+     * record on the nf_sub post, keyed per child and per repeat:
+     *
+     *     "5.1_0" => array( 'value' => ..., 'id' => '5.1_0' )
+     *     "5.2_0" => array( 'value' => ..., 'id' => '5.2_0' )
+     *     "5.2_1" => array( 'value' => ..., 'id' => '5.2_1' )
+     *
+     * so removing child 5.2 means rewriting each record without every 5.2
+     * entry, not deleting the record.
+     *
+     * Which children went is decided against the list this publish declares,
+     * and nothing else. Diffing against the previously stored `fields` setting
+     * looks more natural and is wrong: children keep whatever ids they were
+     * imported with until a publish renumbers them, and the renumbering in
+     * check_update_new_repeater_field_ids() lands after the meta row for this
+     * publish has been written, so a live fieldset can be serving inputs named
+     * `11.2_0` while its own stored setting still reads `doomed-radio`. Read
+     * that way every child looks removed.
+     *
+     * @return void
+     */
+    private function remove_orphaned_fieldset_submission_data()
+    {
+        foreach( $this->fields_data as $field_data ){
+
+            if( ! isset( $field_data[ 'settings' ][ 'type' ] )
+                || 'repeater' !== $field_data[ 'settings' ][ 'type' ] ) continue;
+
+            // No `fields` key means this publish says nothing about the
+            // fieldset's children, so nothing can be concluded about them.
+            if( ! isset( $field_data[ 'settings' ][ 'fields' ] )
+                || ! is_array( $field_data[ 'settings' ][ 'fields' ] ) ) continue;
+
+            if( ! isset( $field_data[ 'id' ] ) || ! is_numeric( $field_data[ 'id' ] ) ) continue;
+
+            $field_id = (int) $field_data[ 'id' ];
+            $prefix   = $field_id . '.';
+
+            $keep                      = array();
+            $every_child_named_by_this = true;
+
+            foreach( $field_data[ 'settings' ][ 'fields' ] as $child ){
+
+                if( ! is_array( $child ) || ! isset( $child[ 'id' ] ) ) continue;
+
+                $child_id = (string) $child[ 'id' ];
+
+                $keep[ $child_id ] = true;
+
+                if( 0 !== strpos( $child_id, $prefix ) ) $every_child_named_by_this = false;
+            }
+
+            /*
+             * A fieldset whose children still carry tmp ids, or the ids they
+             * arrived with from an import, is describing them in a scheme that
+             * stored answers cannot be compared against. Saying nothing is the
+             * only safe reading: the next publish, after renumbering, speaks
+             * the same language as the data and cleans up then.
+             */
+            /*
+             * Purge only when the publish names every child in this fieldset's
+             * own numbering. An empty list, or any child still on a tmp,
+             * legacy or imported id, says too little to tell which stored
+             * answers are whose, so nothing is removed (as before #8175).
+             */
+            if( empty( $keep ) || ! $every_child_named_by_this ) continue;
+
+            $this->purge_fieldset_submission_entries( $field_id, $prefix, $keep );
+        }
+    }
+
+    /**
+     * Rewrite one fieldset's stored answers without its removed children.
+     *
+     * Only entries belonging to a published child of this fieldset are ever
+     * considered, and an entry survives whenever this publish still names its
+     * child.
+     *
+     * @param int                $field_id Repeatable Fieldset field id.
+     * @param string             $prefix   "{fieldId}." — the published child prefix.
+     * @param array<string,bool> $keep     Child ids this publish declares.
+     * @return void
+     */
+    private function purge_fieldset_submission_entries( $field_id, $prefix, array $keep )
+    {
+        $meta_key = '_field_' . $field_id;
+
+        $submission_ids = $this->db->get_col( $this->db->prepare(
+            "SELECT `post`.`ID`
+            FROM `{$this->db->postmeta}` AS `meta`
+            INNER JOIN `{$this->db->posts}` AS `post` ON `post`.`ID` = `meta`.`post_id`
+            WHERE `post`.`post_type` = %s AND `meta`.`meta_key` = %s",
+            'nf_sub',
+            $meta_key
+        ) );
+
+        foreach( $submission_ids as $submission_id ){
+
+            $record = get_post_meta( (int) $submission_id, $meta_key, true );
+
+            if( ! is_array( $record ) ) continue;
+
+            $remaining = array();
+
+            foreach( $record as $reference => $submitted ){
+
+                $child_id = $this->fieldset_child_id_of( (string) $reference );
+
+                // Not a published child of this fieldset: leave it alone.
+                if( 0 !== strpos( $child_id, $prefix ) ){
+                    $remaining[ $reference ] = $submitted;
+                    continue;
+                }
+
+                if( isset( $keep[ $child_id ] ) ){
+                    $remaining[ $reference ] = $submitted;
+                }
+            }
+
+            if( count( $remaining ) === count( $record ) ) continue;
+
+            update_post_meta( (int) $submission_id, $meta_key, $remaining );
+        }
+    }
+
+    /**
+     * The child a stored fieldset answer belongs to.
+     *
+     * Stored answers are keyed "{childId}_{repeatIndex}", and a child id is
+     * "{fieldId}.{n}" — a dot, never an underscore — so the repeat index is
+     * whatever follows the last underscore.
+     *
+     * Compared as a string throughout. A child is "5.2" and its parent is
+     * field 5, so any integer coercion here would match the whole fieldset and
+     * destroy every answer it ever collected.
+     *
+     * @param string $reference Stored key, e.g. "5.2_0".
+     * @return string Child id, e.g. "5.2".
+     */
+    private function fieldset_child_id_of( $reference )
+    {
+        $separator = strrpos( $reference, '_' );
+
+        if( false === $separator ) return $reference;
+
+        return substr( $reference, 0, $separator );
     }
     public function get_updated_fields_data()
     {
@@ -155,7 +323,10 @@ class NF_Database_FieldsController
                     if(is_string($field_data[ 'settings' ][ $setting_name ]) && WPN_Helper::maybe_disallow_unfiltered_html_for_sanitization()) {
                         $field_type = isset($field_data['settings']['type']) ? $field_data['settings']['type'] : '';
                         if ($setting_name === 'default' && in_array($field_type, ['html', 'note', 'textarea'])) {
-                            $field_data[ 'settings' ][ $setting_name ] = wp_kses_post($field_data[ 'settings' ][ $setting_name ]);
+                            // Remove <style>/<script> contents first; kses keeps the code
+                            // between those tags as visible text. See issue #8162.
+                            $stripped = WPN_Helper::strip_code_blocks( $field_data[ 'settings' ][ $setting_name ] );
+                            $field_data[ 'settings' ][ $setting_name ] = WPN_Helper::kses_post_rich_text($stripped[ 'content' ]);
                         } else {
                             $field_data[ 'settings' ][ $setting_name ] = WPN_Helper::sanitize_string_setting_value($setting_name, $field_data[ 'settings' ][ $setting_name ]);
                         }
@@ -244,7 +415,10 @@ class NF_Database_FieldsController
                 if(is_string($value) && WPN_Helper::maybe_disallow_unfiltered_html_for_sanitization()){
                     $field_type = isset($field_data['settings']['type']) ? $field_data['settings']['type'] : '';
                     if ($key === 'default' && in_array($field_type, ['html', 'note', 'textarea'])) {
-                        $field_data[ 'settings' ][$key] = wp_kses_post($value);
+                        // Remove <style>/<script> contents first; kses keeps the code
+                        // between those tags as visible text. See issue #8162.
+                        $stripped = WPN_Helper::strip_code_blocks( $value );
+                        $field_data[ 'settings' ][$key] = WPN_Helper::kses_post_rich_text($stripped[ 'content' ]);
                     } else {
                         $field_data[ 'settings' ][$key] = WPN_Helper::sanitize_string_setting_value($key, $value);
                     }

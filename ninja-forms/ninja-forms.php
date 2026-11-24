@@ -3,7 +3,7 @@
 Plugin Name: Ninja Forms
 Plugin URI: https://ninjaforms.com/?utm_source=WordPress.org&utm_medium=Plugin+header
 Description: Free WordPress form builder with calculations, signatures, star ratings, unlimited submissions stored on your site, and an AI form builder.
-Version: 3.16.1
+Version: 3.16.2
 Author: Saturday Drive
 Author URI: http://ninjaforms.com/?utm_source=Ninja+Forms+Plugin&utm_medium=Plugins+WP+Dashboard
 Text Domain: ninja-forms
@@ -46,14 +46,21 @@ final class Ninja_Forms
      * @since 3.0
      */
 
-    const VERSION = '3.16.1';
+    const VERSION = '3.16.2';
 
     /**
      * @since 3.4.0
      */
     const DB_VERSION = '1.4';
 
-    const WP_MIN_VERSION = '6.4';
+    /**
+     * Lowest WordPress version Ninja Forms supports, held identical to the
+     * "Requires at least" field of readme.txt so the System Status screen
+     * judges a site against the version the plugin actually requires.
+     *
+     * @see https://github.com/Saturday-Drive/ninja-forms/issues/7518
+     */
+    const WP_MIN_VERSION = '6.9';
 
     /**
      * Records the stored rewrite rules already examined for the public link

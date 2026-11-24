@@ -3,6 +3,20 @@ use NinjaForms\Includes\Handlers\Sanitizer;
 
 class NF_Display_Render
 {
+    /**
+     * Settings whose stored text must reach the browser exactly as the form
+     * author typed it, never converted to a number. A display value of "0",
+     * "00" or "007" is a real value and loses its meaning once it becomes a
+     * float.
+     *
+     * @var array
+     */
+    protected static $verbatim_settings = array(
+        'custom_mask',
+        'checked_value',
+        'unchecked_value',
+    );
+
     protected static $render_instance_count = array();
 
     protected static $loaded_templates = array(
@@ -108,17 +122,19 @@ class NF_Display_Render
             return;
         }
 
-        if( $form->get_setting( 'sub_limit_number' ) && ! empty($form->get_setting( 'sub_limit_number' )) ){
+        $sub_limit = WPN_Helper::get_saved_sub_limit( $form_id );
+
+        if( ! empty( $sub_limit[ 'number' ] ) ){
             global $wpdb;
-            $result = $wpdb->get_row( "SELECT COUNT(DISTINCT(p.ID)) AS count FROM `$wpdb->posts` AS p
+            $result = $wpdb->get_row( $wpdb->prepare( "SELECT COUNT(DISTINCT(p.ID)) AS count FROM `$wpdb->posts` AS p
             LEFT JOIN `$wpdb->postmeta` AS m
             ON p.ID = m.post_id
             WHERE m.meta_key = '_form_id'
-            AND m.meta_value = $form_id
-            AND p.post_status = 'publish'");
+            AND m.meta_value = %d
+            AND p.post_status = 'publish'", $form_id ) );
 
-            if( intval( $result->count ) >= $form->get_setting( 'sub_limit_number' ) ) {
-                echo do_shortcode( apply_filters( 'nf_sub_limit_reached_msg', WPN_Helper::maybe_kses_form_message( $form->get_setting( 'sub_limit_msg' ) ), $form_id ));
+            if( intval( $result->count ) >= intval( $sub_limit[ 'number' ] ) ) {
+                echo self::sub_limit_reached_message( $sub_limit[ 'message' ], $form_id );
                 return;
             }
         }
@@ -159,6 +175,13 @@ class NF_Display_Render
 
         $after_form = apply_filters( 'ninja_forms_display_after_form', '', $form_id );
         $settings[ 'afterForm' ] = $after_form;
+
+        // Record the post this form is being displayed on while WordPress still
+        // knows it. The submission cannot recover it afterwards: an archive or a
+        // search result has no post at all, and the referring address alone
+        // cannot tell those apart from the front page. See issue #4028.
+        $settings[ 'nf_post_context_id' ]      = self::current_post_context_id();
+        $settings[ 'nf_post_context_is_home' ] = ( ! self::is_form_preview_request() && is_front_page() ) ? 1 : 0;
 
         // Save form settings before field processing loop (which reuses $settings variable name)
         $form_settings = $settings;
@@ -248,7 +271,7 @@ class NF_Display_Render
                 // Scrub any values that might be stored in data. Defaults will set these later.
                 $settings['value'] = '';
                 foreach ($settings as $key => $setting) {
-                    if (is_numeric($setting) && 'custom_mask' != $key )
+                    if (is_numeric($setting) && ! in_array( $key, self::$verbatim_settings, true ) )
                     	$settings[$key] =
 	                    floatval($setting);
                 }
@@ -280,6 +303,10 @@ class NF_Display_Render
                     }
                 }
 
+                if ( isset( $settings[ 'desc_text' ] ) ) {
+                    $settings[ 'desc_text' ] = self::resolve_description_merge_tags( $settings[ 'desc_text' ] );
+                }
+
                 $thousands_sep = $wp_locale->number_format[ 'thousands_sep'];
                 $decimal_point = $wp_locale->number_format[ 'decimal_point' ];
                 $currencySymbol = Ninja_Forms()->get_setting('currency_symbol');
@@ -292,7 +319,9 @@ class NF_Display_Render
 
                 $settings['label']=\wp_kses_post(Sanitizer::preventScriptTriggerInHtmlOutput($settings['label']));
 
-                $fields[] = apply_filters( 'ninja_forms_localize_field_settings_' . $field_type, $settings, $form );
+                $settings = apply_filters( 'ninja_forms_localize_field_settings_' . $field_type, $settings, $form );
+
+                $fields[] = self::remove_non_client_settings( $settings );
 
                 if( 'recaptcha' == $field[ 'settings' ][ 'type' ] ){
                     array_push( self::$form_uses_recaptcha, $form_id );
@@ -366,6 +395,40 @@ class NF_Display_Render
         <?php
 
         self::enqueue_scripts( $form_id );
+    }
+
+    /**
+     * The post the form is being displayed on, or 0 when the current view is
+     * not a single post. Archives, search results and 404 pages have no post
+     * of their own. See issue #4028.
+     *
+     * @return int
+     */
+    protected static function current_post_context_id()
+    {
+        if ( self::is_form_preview_request() ) {
+            // A form preview takes over whichever post the address happened to
+            // resolve to, usually the front page. The form is not displayed on
+            // that post, so it has no hosting post at all. See issue #4028.
+            return 0;
+        }
+
+        if ( ! is_singular() ) {
+            return 0;
+        }
+
+        return (int) get_queried_object_id();
+    }
+
+    /**
+     * Whether the current request is a form preview rather than a page that
+     * displays the form. See issue #4028.
+     *
+     * @return bool
+     */
+    protected static function is_form_preview_request()
+    {
+        return isset( $_GET[ 'nf_preview_form' ] );
     }
 
     /**
@@ -597,6 +660,66 @@ class NF_Display_Render
         return in_array(true, $return, true);
     }
 
+    /**
+     * Whether a form message would reach the visitor as blank.
+     *
+     * True when the markup carries no words, no image and no shortcode that
+     * could produce either, so a message made of an image or built by a
+     * shortcode is still treated as a message the site owner meant to show.
+     *
+     * @see https://github.com/Saturday-Drive/ninja-forms/issues/7466
+     *
+     * @param string $message Message markup as stored on the form.
+     * @return bool
+     */
+    protected static function message_says_nothing( $message )
+    {
+        if ( false !== strpos( $message, '[' ) ) {
+            return false;
+        }
+
+        if ( preg_match( '/<(img|iframe|video|audio|svg|object|embed)[\s>\/]/i', $message ) ) {
+            return false;
+        }
+
+        $text = html_entity_decode( wp_strip_all_tags( $message ), ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+
+        // Trim ordinary whitespace and the non-breaking space an editor leaves behind.
+        return '' === trim( str_replace( "\xc2\xa0", ' ', $text ) );
+    }
+
+    /**
+     * The message a visitor sees when a form has reached its submission limit.
+     *
+     * Shared by the display path, which withholds the form, and the submission
+     * path, which refuses an attempt, so a visitor is told the same thing
+     * wherever they meet the limit. A form with no limit reached message of its
+     * own falls back to the default wording rather than showing nothing at all.
+     *
+     * "No message" covers more than an empty setting. Clearing the Limit
+     * Reached Message in the builder stores the rich text editor's empty
+     * document, '<p><br></p>', which renders as an empty paragraph: the form is
+     * withheld and the visitor is told nothing about why.
+     *
+     * @see https://github.com/Saturday-Drive/ninja-forms/issues/7466
+     *
+     * @param string     $message The form's limit reached message, if any.
+     * @param int|string $form_id The form's ID.
+     * @return string Message markup, ready to render.
+     */
+    public static function sub_limit_reached_message( $message, $form_id )
+    {
+        $message = (string) $message;
+
+        if ( self::message_says_nothing( $message ) ) {
+            $message = esc_html__( 'The form has reached its submission limit.', 'ninja-forms' );
+        }
+
+        $message = apply_filters( 'nf_sub_limit_reached_msg', WPN_Helper::maybe_kses_form_message( $message ), $form_id );
+
+        return do_shortcode( $message );
+    }
+
     public static function localize_preview( $form_id )
     {
         $capability = apply_filters( 'ninja_forms_display_test_values_capabilities', 'read' );
@@ -625,6 +748,11 @@ class NF_Display_Render
         $form[ 'settings' ][ 'embed_form' ] = '';
 
         $form[ 'settings' ][ 'is_preview' ] = TRUE;
+
+        // A form previewed in the builder is not displayed on any post. See
+        // issue #4028.
+        $form[ 'settings' ][ 'nf_post_context_id' ]      = 0;
+        $form[ 'settings' ][ 'nf_post_context_is_home' ] = 0;
 
         $currency = ( isset( $form[ 'settings' ][ 'currency' ] ) && $form[ 'settings' ][ 'currency' ] ) ? $form[ 'settings' ][ 'currency' ] : Ninja_Forms()->get_setting( 'currency' ) ;
         $currencySymbolLookup = Ninja_Forms::config( 'CurrencySymbol' );
@@ -673,7 +801,7 @@ class NF_Display_Render
                 $field['settings'][ 'afterField' ] = $display_after;
 
                 foreach ($field['settings'] as $key => $setting) {
-                    if (is_numeric($setting)) $field['settings'][$key] = floatval($setting);
+                    if (is_numeric($setting) && ! in_array( $key, self::$verbatim_settings, true ) ) $field['settings'][$key] = floatval($setting);
                 }
 
                 if( ! isset( $field['settings'][ 'label_pos' ] ) || 'default' == $field['settings'][ 'label_pos' ] ){
@@ -721,6 +849,10 @@ class NF_Display_Render
                     }
                 }
 
+                if ( isset( $field[ 'settings' ][ 'desc_text' ] ) ) {
+                    $field[ 'settings' ][ 'desc_text' ] = self::resolve_description_merge_tags( $field[ 'settings' ][ 'desc_text' ] );
+                }
+
                 $fieldType = $field['settings']['type'];
 
                 if(in_array($fieldType,['shipping','product','total'])){
@@ -731,7 +863,9 @@ class NF_Display_Render
                 $field['settings']['old_classname'] = $field_class->get_old_classname();
                 $field['settings']['wrap_template'] = $field_class->get_wrap_template();
 
-                $fields[] = apply_filters( 'ninja_forms_localize_field_settings_' . $field_type, $field['settings'], $form );
+                $field['settings'] = apply_filters( 'ninja_forms_localize_field_settings_' . $field_type, $field['settings'], $form );
+
+                $fields[] = self::remove_non_client_settings( $field['settings'] );
             }
         }
 
@@ -923,7 +1057,17 @@ class NF_Display_Render
             'use_merge_tags' => array(),
             'opinionated_styles' => Ninja_Forms()->get_setting( 'opinionated_styles' ),
             'filter_esc_status'  =>    json_encode( WPN_Helper::maybe_disallow_unfiltered_html_for_escaping() ),
-            'nf_consent_status_response'    => []
+            'nf_consent_status_response'    => [],
+            /*
+             * Whether the person looking at this page can put a broken
+             * reCAPTCHA configuration right. It decides which of the two
+             * "reCAPTCHA could not load" messages a form shows (see
+             * i18nFrontEnd.php and assets/js/lib/global.js, issue #7820), so it
+             * is read per request here rather than from the form's settings,
+             * which are cached and shared by every visitor. The capability is
+             * the one that guards the reCAPTCHA settings screen itself.
+             */
+            'user_can_manage_forms' => current_user_can( apply_filters( 'ninja_forms_admin_settings_capabilities', 'manage_options' ) ),
         ));
 
         foreach( Ninja_Forms()->fields as $field ){
@@ -1086,6 +1230,145 @@ class NF_Display_Render
             'nonce' => wp_create_nonce( 'nf-signature' ),
             'ajaxurl' => admin_url( 'admin-ajax.php' ),
         ] );
+    }
+
+    /**
+     * Settings a rendered page has no use for.
+     *
+     * Two groups, neither of which is read by anything running in a browser:
+     * builder and database bookkeeping, and the per-field style settings the
+     * Layout & Styles add-on turns into CSS on the server. Publishing them only
+     * enlarges every page carrying a form, and admin_label and
+     * personally_identifiable describe the form's internals to any visitor who
+     * views source.
+     *
+     * Removing them cannot affect processing. A submission sends each field's id
+     * and value only, and NF_AJAX_Controllers_Submission reloads every setting
+     * from the database before acting on it.
+     *
+     * @since 3.16.2
+     */
+    const NON_CLIENT_SETTINGS = array(
+        'admin_label',
+        'personally_identifiable',
+        'created_at',
+        'editActive',
+        'objectDomain',
+        'objectType',
+        'parent_id',
+        'cellcid',
+        'manual_key',
+    );
+
+    /**
+     * Resolve the merge tags held in a field's Description.
+     *
+     * A Description advertises merge tag support in the builder, but nothing
+     * ever replaced them, so visitors read the raw tag text on the published
+     * form. Tags whose value is already known when the page is built - site,
+     * post, user and query-string tags - are replaced here.
+     *
+     * Field tags are deliberately left in place. The value of a field is
+     * whatever the visitor has entered, which does not exist yet when the page
+     * is built, so the browser fills those in as they type; see
+     * assets/js/front-end/controllers/fieldDescription.js. They are held aside
+     * while the merge tag groups run, because a group that does not recognise
+     * a tag replaces it with the empty string, which would leave the browser
+     * nothing to fill in.
+     *
+     * @since 3.16.2
+     *
+     * @param mixed $desc_text One field's stored Description.
+     * @return mixed The Description with its page-load merge tags resolved.
+     */
+    protected static function resolve_description_merge_tags( $desc_text )
+    {
+        if ( ! is_string( $desc_text ) || false === strpos( $desc_text, '{' ) ) {
+            return $desc_text;
+        }
+
+        // Private-use code points, so a held tag cannot collide with authored text.
+        $held = array();
+        $masked = preg_replace_callback(
+            '/\{field:[^}]*\}/',
+            function ( $match ) use ( &$held ) {
+                $token = "\u{E020}" . count( $held ) . "\u{E021}";
+                $held[ $token ] = $match[0];
+                return $token;
+            },
+            $desc_text
+        );
+
+        if ( ! is_string( $masked ) ) {
+            return $desc_text;
+        }
+
+        $resolved = apply_filters( 'ninja_forms_merge_tags', $masked );
+
+        if ( ! is_string( $resolved ) ) {
+            return $desc_text;
+        }
+
+        return empty( $held ) ? $resolved : strtr( $resolved, $held );
+    }
+
+    /**
+     * Drop the settings a browser never reads from one field's localized data.
+     *
+     * Runs after ninja_forms_localize_field_settings_{$type} so a setting an
+     * add-on injects there is trimmed as well, and recurses into a Repeatable
+     * Fieldset's children, which carry their own copy of the same settings.
+     *
+     * The style settings are matched by name rather than listed, because each
+     * control the add-on offers creates its own key. The resolved list is passed
+     * through a filter so an add-on that genuinely needs one of these settings
+     * in the browser can take it back off the list.
+     *
+     * @since 3.16.2
+     *
+     * @param array $settings One field's localized settings.
+     * @return array The same settings without the keys no browser reads.
+     */
+    protected static function remove_non_client_settings( $settings )
+    {
+        if ( ! is_array( $settings ) ) {
+            return $settings;
+        }
+
+        $remove = self::NON_CLIENT_SETTINGS;
+
+        foreach ( array_keys( $settings ) as $setting ) {
+            if ( false !== strpos( (string) $setting, '_styles_' ) ) {
+                $remove[] = $setting;
+            }
+        }
+
+        /**
+         * Filter the settings removed from a field's localized data.
+         *
+         * The list arrives resolved against this field, so the per-field style
+         * settings appear by name. Diff a setting out of the list to publish it
+         * to the browser again.
+         *
+         * @since 3.16.2
+         *
+         * @param array $remove   Setting keys to remove from this field.
+         * @param array $settings The field's localized settings, for context.
+         */
+        $remove = apply_filters( 'ninja_forms_backend_only_field_settings', $remove, $settings );
+
+        foreach ( (array) $remove as $setting ) {
+            unset( $settings[ $setting ] );
+        }
+
+        // A Repeatable Fieldset carries its children in its own settings.
+        if ( isset( $settings[ 'fields' ] ) && is_array( $settings[ 'fields' ] ) ) {
+            foreach ( $settings[ 'fields' ] as $index => $child ) {
+                $settings[ 'fields' ][ $index ] = self::remove_non_client_settings( $child );
+            }
+        }
+
+        return $settings;
     }
 
 } // End Class NF_Display_Render

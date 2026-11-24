@@ -483,7 +483,22 @@ class NF_Actions_Email extends SotAction implements InterfacesSotAction
                 $value = "";
                 foreach ($field['fields'] as $field_model) {
                     foreach ($field['value'] as $in_field_value) {
-                        $matching_value = substr($in_field_value['id'], 0, strlen($field_model['id'])) === $field_model['id'];
+                        /*
+                         * Stored repeater keys are {childFieldId}_{entryIndex},
+                         * and the builder writes child ids as
+                         * {parentFieldId}.{n} — so '5.1' is the opening text of
+                         * '5.10' through '5.19', and '5.2' of '5.20' upwards.
+                         * Matching on the opening text let an earlier child
+                         * claim every later child whose id begins with it,
+                         * repeating that child's label and duplicating values.
+                         * Compare the whole child reference instead. See #7971.
+                         */
+                        $submission_key = (string) $in_field_value['id'];
+                        $entry_delimiter = strrpos($submission_key, "_");
+                        $child_reference = false === $entry_delimiter
+                            ? $submission_key
+                            : substr($submission_key, 0, $entry_delimiter);
+                        $matching_value = $child_reference === (string) $field_model['id'];
                         $index_found = substr($in_field_value['id'], strpos($in_field_value['id'], "_") + 1);
                         if ($matching_value) {
                             //Catch specific file uploeds data

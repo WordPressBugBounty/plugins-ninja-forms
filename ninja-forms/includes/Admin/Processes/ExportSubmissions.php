@@ -167,17 +167,34 @@ class NF_Admin_Processes_ExportSubmissions extends NF_Abstracts_BatchProcess
      * @since 3.5.0
      * @return  void
      */
+    /**
+     * Write every batch of the export, then report it finished.
+     *
+     * Each batch is written in turn from this one call. The batches used to
+     * recurse, so the whole export ran as a single deepening chain of calls
+     * inside one request and nothing an earlier batch held could be released
+     * while the later ones ran. Memory therefore only grew across the export,
+     * and a form with a few thousand submissions reached PHP's memory limit
+     * before the file was written.
+     *
+     * @see https://github.com/Saturday-Drive/ninja-forms/issues/8388
+     * @return void
+     */
     public function process()
     {
-        if($this->currentPosition >= $this->sub_count){
-            $this->batch_complete();
-            return;
+        while ($this->currentPosition < $this->sub_count) {
+            $positionBeforeBatch = $this->currentPosition;
+
+            $this->writeBatch();
+
+            if ($this->currentPosition <= $positionBeforeBatch) {
+                // The batch read nothing, so there is nothing further to
+                // write. Stop rather than ask for the same position again.
+                break;
+            }
         }
 
-        $this->writeBatch();
-
-        // Continue looping until end
-        $this->process();
+        $this->batch_complete();
     }
 
     /** 

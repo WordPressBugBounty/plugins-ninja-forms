@@ -200,8 +200,9 @@ function ninja_forms_ability_normalize_field_input(
 
 	foreach ( array( 'default', 'default_value' ) as $key ) {
 		if ( array_key_exists( $key, $input ) ) {
+			// Rich text keeps the colours the customer picked (#7579).
 			$normalized[ $key ] = 'html' === $field_type
-				? wp_kses_post( $input[ $key ] )
+				? \WPN_Helper::kses_post_rich_text( $input[ $key ] )
 				: sanitize_text_field( $input[ $key ] );
 		}
 	}

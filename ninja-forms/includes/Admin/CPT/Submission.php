@@ -260,7 +260,7 @@ class NF_Admin_CPT_Submission
             // text: the allowlist would delete anything bracket-shaped, which is
             // the data loss reported in issue #4003. Fields that hold markup on
             // purpose keep the allowlist.
-            if ( ! WPN_Helper::field_stores_html( $field ) ) {
+            if ( ! WPN_Helper::field_stores_html( $field ) && ! WPN_Helper::field_column_builds_markup( $field ) ) {
                 echo esc_html( apply_filters( 'ninja_forms_custom_columns', $value, $field, $sub_id ) );
             } else {
                 // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped via safeEscapeFilteredValue()

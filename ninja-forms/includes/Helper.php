@@ -219,6 +219,67 @@ class WPN_Helper
 
 
     /**
+     * Remove <style> and <script> elements, contents included, from rich text content.
+     *
+     * wp_kses_post() removes a disallowed tag but keeps the text between the tags. For
+     * nearly every tag that is right: the inner text is content the customer wrote. For
+     * <style> and <script> the inner text is code, so kses leaves CSS rules behind as
+     * visible text on the form - a customer's ".nf-promo{color:red}" rendering above
+     * their own content after an import (issue #8162).
+     *
+     * This runs before wp_kses_post(), not instead of it. Nothing new is allowed
+     * through; the allowlist still has the final word.
+     *
+     * A block is only removed when its closing tag is present. An opening tag with no
+     * partner is reported and left completely alone: guessing where it was meant to end
+     * would mean deleting content the customer may still want. The caller tells them
+     * instead, so they can fix the source and import again.
+     *
+     * @see https://github.com/Saturday-Drive/ninja-forms/issues/8162
+     *
+     * @param string $value Rich text content.
+     * @return array{content:string,removed:bool,unclosed:bool} The cleaned content,
+     *               whether anything was removed, and whether an unclosed tag was seen.
+     */
+    public static function strip_code_blocks( $value )
+    {
+        $report = array(
+            'content'  => $value,
+            'removed'  => false,
+            'unclosed' => false,
+        );
+
+        if ( ! is_string( $value ) || '' === $value ) {
+            return $report;
+        }
+
+        foreach ( array( 'style', 'script' ) as $tag ) {
+            $matched = 0;
+            $stripped = preg_replace(
+                '#<' . $tag . '\b[^>]*>.*?</\s*' . $tag . '\s*>#is',
+                '',
+                $report[ 'content' ],
+                -1,
+                $matched
+            );
+
+            // preg_replace returns null on failure; keep the original in that case.
+            if ( null !== $stripped && $matched > 0 ) {
+                $report[ 'content' ] = $stripped;
+                $report[ 'removed' ] = true;
+            }
+
+            // Whatever opening tag is still here has no closing partner.
+            if ( preg_match( '#<' . $tag . '\b[^>]*>#i', $report[ 'content' ] ) ) {
+                $report[ 'unclosed' ] = true;
+            }
+        }
+
+        return $report;
+    }
+
+
+    /**
      * Prepare a value a site visitor submitted for storage.
      *
      * A visitor typing into a form field is writing text, not markup. Running
@@ -297,6 +358,49 @@ class WPN_Helper
         if ( 'signature' === $type ) return true;
 
         return 'textarea' === $type && (bool) $rte;
+    }
+
+    /**
+     * Whether a field's submissions-column formatter builds its own markup.
+     *
+     * The choice fields do not display the value a visitor submitted. Their
+     * ninja_forms_custom_columns formatter looks the chosen values up in the
+     * form's own option list and returns the matching labels, already escaped,
+     * joined by a line break so several answers read on separate lines. That
+     * return value is markup the plugin composed, not visitor text, so
+     * encoding it again prints the separator and the escaping as characters
+     * (issue #8174). Those columns keep the safe-HTML allowlist instead.
+     *
+     * This says nothing about what the field stores; a Checkbox List still
+     * stores plain text, and every other consumer of that value still treats
+     * it as text.
+     *
+     * @see https://github.com/Saturday-Drive/ninja-forms/issues/8174
+     *
+     * @param mixed $field Field object, or its settings array.
+     * @return bool
+     */
+    public static function field_column_builds_markup( $field )
+    {
+        if ( is_object( $field ) && method_exists( $field, 'get_setting' ) ) {
+            $type = $field->get_setting( 'type' );
+        } elseif ( is_array( $field ) ) {
+            $settings = isset( $field[ 'settings' ] ) && is_array( $field[ 'settings' ] ) ? $field[ 'settings' ] : $field;
+            $type     = isset( $settings[ 'type' ] ) ? $settings[ 'type' ] : '';
+        } else {
+            return false;
+        }
+
+        $list_types = array(
+            'listradio',
+            'listselect',
+            'listcheckbox',
+            'listmultiselect',
+            'liststate',
+            'listimage',
+        );
+
+        return in_array( $type, $list_types, true );
     }
 
     /**
@@ -590,6 +694,57 @@ class WPN_Helper
     }
     
     /**
+     * A form's submission limit, read from the form's own saved row.
+     *
+     * A request is otherwise served the cached working copy of the form, which
+     * NF_Abstracts_ModelFactory layers over the form model on construction.
+     * For most settings a copy that lags a builder change is cosmetic. The
+     * submission limit is the exception: a lagging limit leaves the form on the
+     * page taking submissions that are then refused, so the visitor appears to
+     * succeed while nothing is recorded.
+     *
+     * Both the display check, which withholds the form, and the submission
+     * check, which refuses an attempt, read the limit through here, so a
+     * visitor is never offered a form on terms the server will not honour.
+     *
+     * Both settings live in the form meta table; neither is one of the form
+     * model's own columns.
+     *
+     * @see https://github.com/Saturday-Drive/ninja-forms/issues/7466
+     *
+     * @param int|string $form_id The form's ID.
+     * @return array Keys 'number' (the limit, '' when there is none) and
+     *               'message' (the limit reached message, '' when unset).
+     */
+    public static function get_saved_sub_limit( $form_id )
+    {
+        global $wpdb;
+
+        $rows = $wpdb->get_results( $wpdb->prepare(
+            "SELECT `key`, `value`
+            FROM `{$wpdb->prefix}nf3_form_meta`
+            WHERE `parent_id` = %d
+            AND `key` IN ( 'sub_limit_number', 'sub_limit_msg' )",
+            $form_id
+        ), 'ARRAY_A' );
+
+        $saved = array( 'number' => '', 'message' => '' );
+
+        if ( ! $rows ) {
+            return $saved;
+        }
+
+        $keys = array( 'sub_limit_number' => 'number', 'sub_limit_msg' => 'message' );
+
+        foreach ( $rows as $row ) {
+            if ( ! isset( $keys[ $row[ 'key' ] ] ) ) continue;
+            $saved[ $keys[ $row[ 'key' ] ] ] = (string) static::maybe_unserialize( $row[ 'value' ] );
+        }
+
+        return $saved;
+    }
+
+    /**
      * Function to fetch our cache from the upgrades table (if it exists there).
      * 
      * @param $id (int) The form ID.
@@ -878,6 +1033,235 @@ class WPN_Helper
         $outgoing = implode(' ',$sanitized);
 
         return $outgoing;
+    }
+
+
+    /**
+     * Runs rich text field content through wp_kses_post() without losing the
+     * colours the customer picked.
+     *
+     * WordPress's safe-HTML filter accepts `color:#e60000` and `color:red`, but
+     * discards `color:rgb(230, 0, 0)` because `rgb` is missing from its list of
+     * trusted CSS functions. Our Quill configuration writes colour and highlight
+     * as inline styles, and a browser always serialises a picked colour into the
+     * rgb() form, so every colour a customer picked was being thrown away on
+     * import (issue #7579).
+     *
+     * Colours are rewritten into the hex spelling WordPress already accepts and
+     * the filter then runs at full strength. Nothing about the filter is relaxed.
+     *
+     * Anything that isn't text (null, an array) goes to wp_kses_post() unchanged,
+     * exactly as it did before this helper existed.
+     *
+     * @param mixed $value Rich text content as authored.
+     * @return mixed Filtered content with picked colours intact.
+    */
+    public static function kses_post_rich_text($value) {
+
+        if ( ! is_string( $value ) ) {
+            return wp_kses_post( $value );
+        }
+
+        return wp_kses_post(self::hexify_css_color_functions($value));
+    }
+
+    /**
+     * Rewrites rgb()/rgba()/hsl()/hsla() colours inside style attributes into
+     * their hex equivalent.
+     *
+     * Only style attribute contents are touched, and only these four colour
+     * functions within them. A value that cannot be parsed as a colour is left
+     * exactly as authored for the safe-HTML filter to deal with as it does today.
+     *
+     * @param string $value Markup that may carry style attributes.
+     * @return string Same markup with colour functions expressed as hex.
+    */
+    public static function hexify_css_color_functions($value):string {
+
+        if ('' === $value || false === stripos($value, 'style')) {
+            return $value;
+        }
+
+        $hexified = preg_replace_callback(
+            '/style\s*=\s*(["\'])(.*?)\1/is',
+            function ($attribute) {
+                $declarations = preg_replace_callback(
+                    '/\b(rgba?|hsla?)\(([^()]*)\)/i',
+                    function ($color) {
+                        $hex = WPN_Helper::css_color_function_to_hex($color[1], $color[2]);
+
+                        return '' === $hex ? $color[0] : $hex;
+                    },
+                    $attribute[2]
+                );
+
+                return 'style=' . $attribute[1] . $declarations . $attribute[1];
+            },
+            $value
+        );
+
+        return null === $hexified ? $value : $hexified;
+    }
+
+    /**
+     * Converts the arguments of a CSS colour function into a hex colour.
+     *
+     * Handles both the legacy comma syntax browsers emit (`rgb(230, 0, 0)`) and
+     * the space syntax with an optional slash alpha (`rgb(230 0 0 / 35%)`).
+     * Transparency becomes the 8-digit hex form, which WordPress accepts.
+     *
+     * @param string $function Colour function name: rgb, rgba, hsl or hsla.
+     * @param string $arguments Raw arguments from between the parentheses.
+     * @return string Hex colour, or an empty string when the value is not a
+     *                colour we can express exactly.
+    */
+    public static function css_color_function_to_hex($function, $arguments):string {
+
+        $parts = preg_split('#[\s,/]+#', trim($arguments), -1, PREG_SPLIT_NO_EMPTY);
+
+        if (! is_array($parts) || count($parts) < 3 || count($parts) > 4) {
+            return '';
+        }
+
+        $alpha = 1.0;
+        if (4 === count($parts)) {
+            $alpha = self::css_alpha_to_fraction(array_pop($parts));
+            if (null === $alpha) {
+                return '';
+            }
+        }
+
+        $function = strtolower($function);
+
+        if ('rgb' === $function || 'rgba' === $function) {
+            $channels = array();
+            foreach ($parts as $part) {
+                $channel = self::css_rgb_channel_to_int($part);
+                if (null === $channel) {
+                    return '';
+                }
+                $channels[] = $channel;
+            }
+        } else {
+            $channels = self::css_hsl_to_rgb_channels($parts);
+            if (null === $channels) {
+                return '';
+            }
+        }
+
+        $hex = '#';
+        foreach ($channels as $channel) {
+            $hex .= str_pad(dechex($channel), 2, '0', STR_PAD_LEFT);
+        }
+
+        if ($alpha < 1.0) {
+            $hex .= str_pad(dechex((int) round($alpha * 255)), 2, '0', STR_PAD_LEFT);
+        }
+
+        return $hex;
+    }
+
+    /**
+     * Reads one red, green or blue channel, as a 0-255 number or a percentage.
+     *
+     * @param string $part Single channel argument.
+     * @return int|null Channel value 0-255, or null when it is not a number.
+    */
+    private static function css_rgb_channel_to_int($part)
+    {
+        if (! preg_match('/^(-?\d*\.?\d+)(%?)$/', trim($part), $matches)) {
+            return null;
+        }
+
+        $number = (float) $matches[1];
+        if ('%' === $matches[2]) {
+            $number = $number * 255 / 100;
+        }
+
+        return (int) round(max(0, min(255, $number)));
+    }
+
+    /**
+     * Reads a CSS alpha argument, given either as a fraction or a percentage.
+     *
+     * @param string $part Alpha argument.
+     * @return float|null Alpha as a 0-1 fraction, or null when unreadable.
+    */
+    private static function css_alpha_to_fraction($part)
+    {
+        if (! preg_match('/^(-?\d*\.?\d+)(%?)$/', trim($part), $matches)) {
+            return null;
+        }
+
+        $number = (float) $matches[1];
+        if ('%' === $matches[2]) {
+            $number = $number / 100;
+        }
+
+        return max(0.0, min(1.0, $number));
+    }
+
+    /**
+     * Converts hue, saturation and lightness arguments into rgb channels.
+     *
+     * @param array $parts Three arguments: hue, saturation, lightness.
+     * @return array|null Three 0-255 channels, or null when unreadable.
+    */
+    private static function css_hsl_to_rgb_channels($parts)
+    {
+        if (! preg_match('/^(-?\d*\.?\d+)(deg)?$/', trim($parts[0]), $hue)) {
+            return null;
+        }
+
+        $saturation = self::css_percentage_to_fraction($parts[1]);
+        $lightness = self::css_percentage_to_fraction($parts[2]);
+
+        if (null === $saturation || null === $lightness) {
+            return null;
+        }
+
+        $hue = fmod((float) $hue[1], 360);
+        if ($hue < 0) {
+            $hue += 360;
+        }
+
+        $chroma = (1 - abs(2 * $lightness - 1)) * $saturation;
+        $segment = $hue / 60;
+        $second = $chroma * (1 - abs(fmod($segment, 2) - 1));
+        $match = $lightness - $chroma / 2;
+
+        $sequences = array(
+            array($chroma, $second, 0),
+            array($second, $chroma, 0),
+            array(0, $chroma, $second),
+            array(0, $second, $chroma),
+            array($second, 0, $chroma),
+            array($chroma, 0, $second),
+        );
+
+        $sequence = $sequences[(int) floor($segment) % 6];
+
+        $channels = array();
+        foreach ($sequence as $component) {
+            $channels[] = (int) round(($component + $match) * 255);
+        }
+
+        return $channels;
+    }
+
+    /**
+     * Reads a CSS percentage argument as a 0-1 fraction.
+     *
+     * @param string $part Percentage argument.
+     * @return float|null Fraction, or null when unreadable.
+    */
+    private static function css_percentage_to_fraction($part)
+    {
+        if (! preg_match('/^(-?\d*\.?\d+)%?$/', trim($part), $matches)) {
+            return null;
+        }
+
+        return max(0.0, min(1.0, (float) $matches[1] / 100));
     }
 
     /**

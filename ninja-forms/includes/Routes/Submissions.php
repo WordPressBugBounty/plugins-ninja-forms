@@ -689,6 +689,18 @@ class NF_Routes_Submissions extends NF_Abstracts_Routes
         // Init Calc Merge Tags
         $calcs_merge_tags = Ninja_Forms()->merge_tags[ 'calcs' ];
 
+        // Give Hidden fields the saved form's rules, as on submission, so a value a
+        // Conditional Logic rule set is kept in re-sent calculations.
+        // @see https://github.com/Saturday-Drive/ninja-forms/issues/8257
+        if( $form_data && isset( $form_data['fields'] ) && is_array( $form_data['fields'] ) ) {
+            $form_conditions = ( isset( $formSettings['conditions'] ) && is_array( $formSettings['conditions'] ) ) ? $formSettings['conditions'] : array();
+            foreach( $form_data['fields'] as $index => $field ){
+                if( is_array( $field ) && isset( $field['type'] ) && 'hidden' === $field['type'] ) {
+                    $form_data['fields'][ $index ]['form_conditions'] = $form_conditions;
+                }
+            }
+        }
+
         //Process Fields Merge Tags
         // If we have processed form data, use those fields directly (they're already processed)
         if( $form_data && isset( $form_data['fields'] ) ) {
@@ -723,7 +735,8 @@ class NF_Routes_Submissions extends NF_Abstracts_Routes
         if( $form_data && isset( $formSettings['calculations'] ) && !empty( $formSettings['calculations'] ) ) {
             $form_data['extra']['calculations'] = [];
 
-            foreach( $formSettings['calculations'] as $calc ){
+            // Evaluate each calc after the calcs it uses (#8264).
+            foreach( NF_MergeTags_Calcs::get_evaluation_order( $formSettings['calculations'] ) as $calc ){
                 // Apply filter which replaces merge tags in the equation
                 $eq = apply_filters( 'ninja_forms_calc_setting', $calc['eq'] );
 

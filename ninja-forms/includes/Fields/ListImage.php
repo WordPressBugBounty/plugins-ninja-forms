@@ -86,17 +86,18 @@ class NF_Fields_ListImage extends NF_Abstracts_List
         $options = apply_filters( 'ninja_forms_render_options', $options, $settings );
         $options = apply_filters( 'ninja_forms_render_options_' . $field->get_setting( 'type' ), $options, $settings );
 
-        $output = '';
+        $labels = array();
         if( ! empty( $options ) ) {
             foreach ($options as $option) {
 
                 if ( ! in_array( $option[ 'value' ], $value ) ) continue;
 
-                $output .= esc_html( $option[ 'label' ] ) . "<br />";
+                $labels[] = esc_html( $option[ 'label' ] );
             }
         }
 
-        return $output;
+        // Joined, not appended: a single answer must not trail a blank line.
+        return implode( "<br />", $labels );
     }
 
     public function get_calc_value($value, $field)

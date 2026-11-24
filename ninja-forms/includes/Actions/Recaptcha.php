@@ -320,15 +320,81 @@ final class NF_Actions_Recaptcha extends SotAction implements InterfacesSotActio
 			return false;
 		}
 
-		$scripts = wp_scripts();
-
-		foreach ($scripts->registered as $script) {
-			if (false !== strpos($script->src, 'google.com/recaptcha/api.js')) {
+		foreach ($this->get_page_bound_script_handles() as $handle) {
+			if ($this->script_loads_our_recaptcha($handle)) {
 				return false;
 			}
 		}
 
 		return true;
+	}
+
+	/**
+	 * Script handles that will actually reach the page: everything enqueued,
+	 * plus the registered dependencies those handles pull in with them.
+	 *
+	 * A handle that is only registered never reaches the page, so it cannot
+	 * supply the grecaptcha object our field controller needs. Treating a bare
+	 * registration as somebody else's reCAPTCHA left forms unusable alongside
+	 * plugins that register the script unconditionally. See issue #6007.
+	 *
+	 * @return string[]
+	 */
+	protected function get_page_bound_script_handles()
+	{
+		$scripts = wp_scripts();
+
+		$pending = (isset($scripts->queue) && is_array($scripts->queue)) ? $scripts->queue : array();
+		$seen = array();
+
+		while ($pending) {
+			$handle = array_shift($pending);
+
+			if (isset($seen[$handle])) {
+				continue;
+			}
+
+			$seen[$handle] = true;
+
+			if (isset($scripts->registered[$handle]->deps) && is_array($scripts->registered[$handle]->deps)) {
+				foreach ($scripts->registered[$handle]->deps as $dependency) {
+					$pending[] = $dependency;
+				}
+			}
+		}
+
+		return array_keys($seen);
+	}
+
+	/**
+	 * Is this handle the Google reCAPTCHA API loaded with our own site key?
+	 *
+	 * reCAPTCHA v3 binds the script to one site key through its render
+	 * parameter, and Google refuses a token requested against any other key,
+	 * so another plugin's key is no substitute for ours. See issue #6007.
+	 *
+	 * @param string $handle
+	 *
+	 * @return bool
+	 */
+	protected function script_loads_our_recaptcha($handle)
+	{
+		$scripts = wp_scripts();
+
+		if (! isset($scripts->registered[$handle]->src)) {
+			return false;
+		}
+
+		$src = (string) $scripts->registered[$handle]->src;
+
+		if (false === strpos($src, 'google.com/recaptcha/api.js')) {
+			return false;
+		}
+
+		$arguments = array();
+		parse_str((string) parse_url($src, PHP_URL_QUERY), $arguments);
+
+		return isset($arguments['render']) && $arguments['render'] === $this->site_key;
 	}
 
 	protected function get_form_data()

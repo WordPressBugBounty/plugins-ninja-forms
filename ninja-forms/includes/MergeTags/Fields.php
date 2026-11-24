@@ -191,8 +191,13 @@ class NF_MergeTags_Fields extends NF_Abstracts_MergeTags
 
             $field['value'] = apply_filters('ninja_forms_merge_tag_value_' . $field['type'], $field['value'], $field);
 
-            // Skip fields without values.
-            if (!$field['value']) continue;
+            // Skip fields without values. A checkbox display value of "0" is a
+            // value the form author chose, so only an empty one is skipped.
+            if ('checkbox' === $field['type']) {
+                if ('' === $field['value'] || null === $field['value']) continue;
+            } elseif (!$field['value']) {
+                continue;
+            }
 
             if (is_array($field['value']) && $field['type'] !== "repeater") $field['value'] = implode(', ', $field['value']);
 

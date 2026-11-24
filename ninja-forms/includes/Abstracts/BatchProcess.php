@@ -203,7 +203,13 @@ abstract class NF_Abstracts_BatchProcess
     public function respond()
     {
         if ( ! empty( $this->response[ 'errors' ] ) ) {
-            $this->response[ 'errors' ] = array_unique( $this->response[ 'errors' ] );
+            /**
+             * SORT_REGULAR compares the error arrays themselves. The default
+             * SORT_STRING casts every one of them to the string "Array", so any two
+             * distinct messages collapsed into one. See issue #8162, where the import
+             * can report both a removed code block and an unclosed tag.
+             */
+            $this->response[ 'errors' ] = array_values( array_unique( $this->response[ 'errors' ], SORT_REGULAR ) );
         }
 
         echo wp_json_encode( $this->response );

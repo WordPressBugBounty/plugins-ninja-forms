@@ -4,7 +4,7 @@ Tags: forms, form builder, contact form, lead form, calculator form
 
 Requires at least: 6.9
 Tested up to: 7.1
-Stable tag: 3.16.1
+Stable tag: 3.16.2
 Requires PHP: 7.4
 
 License: GPLv2 or later
@@ -227,47 +227,104 @@ This section describes how to install the plugin and get it working.
 7. A finished form on the front end, with a live total, a star rating, and a signature
 
 == Upgrade Notice ==
-= 3.16.1 (09 November 2026) =
+= 3.16.2 (23 November 2026) =
 
 *Bug Fixes:*
 
-- let a form be submitted again after a form-level message, such as a cancelled payment, without reloading the page
-- show a message and release the Submit button when a submission fails because of a lost connection or an unreadable server reply
-- clear a typed date that doesn't match the field's format and show the invalid date message, instead of silently changing it to a different date
-- show the invalid date message the first time an invalid date is typed
-- write the long date format in the word order of the site's language
-- update an HTML field as a Paragraph Text field it shows is typed in, keeping line breaks
-- stop showing a passing checkmark on a required Checkbox List field when no option is ticked
-- apply a field's custom Element class to each option of Checkbox List, Radio List and Select Image fields
-- move the cursor to the first field of a newly added Repeatable Fieldset set
-- run reCAPTCHA v3 and Akismet spam checks before any other form action, so rejected submissions no longer trigger WP Hook or add-on actions
-- prevent the Public Link page returning a 404 after the site's permalink rules are rebuilt
-- show the Public Link page without an "Archives" heading on themes that have no page template, such as Twenty Twenty
-- prevent a critical error on forms whose First Name, Last Name or Email field has a legacy "User Meta" default type
-- prevent a fatal "Cannot redeclare wp_session_cleanup()" error alongside plugins such as Charitable Pro
-- show rich text Paragraph Text answers as formatted text instead of HTML tags in the Submissions table
-- show each paragraph and list item of a rich text answer on its own line when editing a submission, and keep them when saving
-- show only the ticked options in Checkbox List cells, and let Submissions table cells grow instead of scrolling
-- keep the status, search and date filters when paging or changing page size on the Submissions page
-- show the correct hour for Date fields set to 24 hour mode on the Submissions page
-- export rich text Paragraph Text answers as readable text, without formatting tags, in Download All Submissions
-- leave reCAPTCHA and other hidden system fields out of the CSV attached to Email actions
-- place new fields where they are dropped in a Repeatable Fieldset in the form builder
-- stop the form builder going blank when a Date field's Minute Increment is 0
-- hide the Placeholder setting on Date/Time fields set to Time Only, where it had no effect
-- sort the Dashboard forms list by Date Created and Title on the first click
-- prevent errors when previewing unpublished changes on a form that has never been published
-- refresh the Add-Ons list after a bulk plugin update wherever Ninja Forms falls in the batch
-- keep each form when the create-form ability is called more than once in a request
+- send events from the Google Analytics 4 action again, for both its GA4 and Tag Manager methods
+- save the correct result for a calculation that uses another calculation listed below it
+- use a Hidden field's saved value in calculations and payment totals, unless a Conditional Logic rule sets it
+- count submissions the same way in calculations as in emails, including the submission being made and leaving out trashed submissions
+- number uploaded files with the entry's own number when {submission:sequence} is used in the file name
+- fill Form merge tags such as {submission:sequence} in Hidden field default values
+- fill post data merge tags in action settings with the page the form was submitted from
+- apply a changed submission limit straight away, and always show the limit message when a submission is refused
+- keep a Single Checkbox Checked or Unchecked value of 0 instead of replacing it with the built-in label
+- show the Checked or Unchecked wording, not the calculation value, for Single Checkbox merge tags in actions
+- give each {other:random} merge tag its own value when it is used more than once in the same text
+- refuse submissions when the hidden anti-spam field is filled in, including by scripts that don't use jQuery
+- show a form notice instead of "This is a required field" when an Invisible reCAPTCHA v2 can't load
+- load reCAPTCHA v3 on pages where Elementor Pro or another plugin registers Google's reCAPTCHA script
+- show forms placed in Elementor popups and other areas added to the page after it loads
+- fill merge tags in field descriptions, including on Signature fields
+- keep help text working on a field that Conditional Logic shows again
+- show every year from the Start Year to the End Year in the Date field calendar
+- show the year in the date picker on sites whose styles change how dropdowns display
+- wrap the Date field label in a label element, like other fields
+- stop adding autocomplete="on" to fields with no matching autocomplete type
+- remove the empty space left by Hidden fields
+- place Single Checkbox descriptions under the checkbox when the label is on the right
+- line up Date/Time, list, Star Rating and Signature labels with other labels when Label Position is Left of Element
+- stack column helper classes, such as two-col-list and one-half, on screens 767px wide and narrower
+- show the form preview on classic themes that use a page builder such as Divi
+- prevent an "Automatic conversion of false to array" deprecation notice when a form is submitted
+- show list field answers without "<br />" text on the legacy Submissions page
+- delete a field's answers from submissions when the field, or a Repeatable Fieldset field, is deleted
+- show options added with the ninja_forms_render_options filter when editing a submission
+- put Repeatable Fieldset answers under the right columns in the Email action's CSV when a fieldset has more than 10 fields
+- prevent Download All Submissions running out of memory on forms with a Country field
+- keep text colours in HTML field content when a form is imported or saved
+- remove style and script blocks whole when a form is imported, instead of leaving their code as visible text, and show a notice
+- keep HTML in field labels when a form is imported as a Trusted source
+- show quotation marks in a field's Default Value correctly in the form builder
+- delete options from a duplicated list or Select Image field without reloading the form builder
+- show WordPress versions below 6.9 as Not Supported in System Status
 
 *Enhancements:*
 
-- open the Submissions Table block's settings when the block is clicked before any fields are chosen
-- list Ninja Forms deprecation notices in the Error logs section of Get Help
-- delete abandoned submission export files after 24 hours with a daily cleanup
+- show grab and pointer cursors on the drag, merge tag and delete icons of calculation and option rows
+- leave field settings the browser doesn't use out of published forms, with a new ninja_forms_backend_only_field_settings filter to add one back
 
 
 == Changelog ==
+= 3.16.2 (23 November 2026) =
+
+*Bug Fixes:*
+
+- send events from the Google Analytics 4 action again, for both its GA4 and Tag Manager methods
+- save the correct result for a calculation that uses another calculation listed below it
+- use a Hidden field's saved value in calculations and payment totals, unless a Conditional Logic rule sets it
+- count submissions the same way in calculations as in emails, including the submission being made and leaving out trashed submissions
+- number uploaded files with the entry's own number when {submission:sequence} is used in the file name
+- fill Form merge tags such as {submission:sequence} in Hidden field default values
+- fill post data merge tags in action settings with the page the form was submitted from
+- apply a changed submission limit straight away, and always show the limit message when a submission is refused
+- keep a Single Checkbox Checked or Unchecked value of 0 instead of replacing it with the built-in label
+- show the Checked or Unchecked wording, not the calculation value, for Single Checkbox merge tags in actions
+- give each {other:random} merge tag its own value when it is used more than once in the same text
+- refuse submissions when the hidden anti-spam field is filled in, including by scripts that don't use jQuery
+- show a form notice instead of "This is a required field" when an Invisible reCAPTCHA v2 can't load
+- load reCAPTCHA v3 on pages where Elementor Pro or another plugin registers Google's reCAPTCHA script
+- show forms placed in Elementor popups and other areas added to the page after it loads
+- fill merge tags in field descriptions, including on Signature fields
+- keep help text working on a field that Conditional Logic shows again
+- show every year from the Start Year to the End Year in the Date field calendar
+- show the year in the date picker on sites whose styles change how dropdowns display
+- wrap the Date field label in a label element, like other fields
+- stop adding autocomplete="on" to fields with no matching autocomplete type
+- remove the empty space left by Hidden fields
+- place Single Checkbox descriptions under the checkbox when the label is on the right
+- line up Date/Time, list, Star Rating and Signature labels with other labels when Label Position is Left of Element
+- stack column helper classes, such as two-col-list and one-half, on screens 767px wide and narrower
+- show the form preview on classic themes that use a page builder such as Divi
+- prevent an "Automatic conversion of false to array" deprecation notice when a form is submitted
+- show list field answers without "<br />" text on the legacy Submissions page
+- delete a field's answers from submissions when the field, or a Repeatable Fieldset field, is deleted
+- show options added with the ninja_forms_render_options filter when editing a submission
+- put Repeatable Fieldset answers under the right columns in the Email action's CSV when a fieldset has more than 10 fields
+- prevent Download All Submissions running out of memory on forms with a Country field
+- keep text colours in HTML field content when a form is imported or saved
+- remove style and script blocks whole when a form is imported, instead of leaving their code as visible text, and show a notice
+- keep HTML in field labels when a form is imported as a Trusted source
+- show quotation marks in a field's Default Value correctly in the form builder
+- delete options from a duplicated list or Select Image field without reloading the form builder
+- show WordPress versions below 6.9 as Not Supported in System Status
+
+*Enhancements:*
+
+- show grab and pointer cursors on the drag, merge tag and delete icons of calculation and option rows
+- leave field settings the browser doesn't use out of published forms, with a new ninja_forms_backend_only_field_settings filter to add one back
+
 = 3.16.1 (09 November 2026) =
 
 *Bug Fixes:*

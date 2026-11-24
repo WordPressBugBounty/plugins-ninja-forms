@@ -204,6 +204,11 @@ class NF_Actions_Save extends SotAction implements InterfacesSotAction
         $exception_fields = isset($action_settings['exception_fields']) && is_array($action_settings['exception_fields'])
             ? $action_settings['exception_fields'] : array();
 
+        // Hidden fields whose Default Value carries a Form merge tag have to
+        // wait for the submission to exist before they can be resolved. See
+        // issue #4280.
+        $deferred_merge_tag_fields = array();
+
         // For each field on the form...
         foreach ($data['fields'] as $field) {
 
@@ -257,6 +262,10 @@ class NF_Actions_Save extends SotAction implements InterfacesSotAction
             if ($save_field) {
                 // Do so.
                 $sub->update_field_value($field['id'], $field['value']);
+
+                if ($this->hasDeferredMergeTagDefault($field)) {
+                    $deferred_merge_tag_fields[] = $field;
+                }
             } // Otherwise...
             else {
                 // If this field is not a product...
@@ -288,7 +297,115 @@ class NF_Actions_Save extends SotAction implements InterfacesSotAction
         do_action('nf_create_sub', $sub->get_id());
         do_action('ninja_forms_save_sub', $sub->get_id());
 
+        $data = $this->resolveDeferredMergeTagDefaults($sub, $deferred_merge_tag_fields, $data);
+
         $data['actions']['save']['sub_id'] = $sub->get_id();
+
+        return $data;
+    }
+
+    /**
+     * Does this field's Default Value have to be resolved after the save?
+     *
+     * The Form merge tags describe the submission being created, so a hidden
+     * field asking for {submission:sequence} or one of its siblings renders
+     * empty: at that point there is no submission to describe. Those fields
+     * are collected here and resolved once the submission exists.
+     *
+     * @see https://github.com/Saturday-Drive/ninja-forms/issues/4280
+     *
+     * @param array $field Field data from the submission.
+     * @return bool TRUE when the field's default still needs resolving.
+     */
+    protected function hasDeferredMergeTagDefault(array $field): bool
+    {
+        if (! isset($field['type']) || 'hidden' !== $field['type']) {
+            return false;
+        }
+
+        if (! isset($field['default']) || ! is_string($field['default'])) {
+            return false;
+        }
+
+        return false !== strpos($field['default'], '{');
+    }
+
+    /**
+     * Store the resolved Default Value of every deferred hidden field.
+     *
+     * Runs after ninja_forms_save_sub, by which point the Form merge tags
+     * carry this submission's own sequence number. A default that resolves to
+     * something other than itself is stored, replacing whatever the browser
+     * posted for that field: this value is the server's to decide, and the
+     * browser has no business supplying it. A default holding no Form merge
+     * tag resolves to itself and is left exactly as it was.
+     *
+     * @see https://github.com/Saturday-Drive/ninja-forms/issues/4280
+     *
+     * @param NF_Database_Models_Submission $sub    The saved submission.
+     * @param array                         $fields Fields awaiting resolution.
+     * @param array                         $data   Submission data.
+     * @return array Submission data carrying the resolved values.
+     */
+    protected function resolveDeferredMergeTagDefaults($sub, array $fields, array $data): array
+    {
+        if (empty($fields)) {
+            return $data;
+        }
+
+        $form_merge_tags = isset(Ninja_Forms()->merge_tags['form'])
+            ? Ninja_Forms()->merge_tags['form'] : null;
+
+        if (! is_object($form_merge_tags) || ! method_exists($form_merge_tags, 'replace')) {
+            return $data;
+        }
+
+        $field_merge_tags = isset(Ninja_Forms()->merge_tags['fields'])
+            ? Ninja_Forms()->merge_tags['fields'] : null;
+
+        $resolved_any = false;
+
+        foreach ($fields as $field) {
+            $resolved = $form_merge_tags->replace($field['default']);
+
+            if (! is_string($resolved) || $resolved === $field['default']) {
+                // Nothing in there belonged to the Form merge tags.
+                continue;
+            }
+
+            if (preg_match('/\{[a-z0-9_]+:[^{}]*\}/i', $resolved)) {
+                // The default also holds a tag from another group, which was
+                // resolved when the form was drawn and cannot be resolved again
+                // here. Keep the value the browser posted rather than storing
+                // that tag as literal text.
+                continue;
+            }
+
+            $sub->update_field_value($field['id'], $resolved);
+            $resolved_any = true;
+
+            $field['value'] = $resolved;
+
+            if (isset($data['fields'][$field['id']])) {
+                $data['fields'][$field['id']]['value'] = $resolved;
+            }
+
+            if (isset($field['key']) && isset($data['fields_by_key'][$field['key']])) {
+                $data['fields_by_key'][$field['key']]['value'] = $resolved;
+            }
+
+            // Re-register the field so {field:key} resolves to the stored
+            // value in every action that runs after this one.
+            if (is_object($field_merge_tags) && method_exists($field_merge_tags, 'add_field')) {
+                $field_merge_tags->add_field($field);
+            }
+        }
+
+        if ($resolved_any) {
+            // The sequence number is already assigned, so this second save
+            // writes the resolved values without advancing the counter.
+            $sub->save();
+        }
 
         return $data;
     }

@@ -15,6 +15,33 @@ class NF_Fields_ListCountry extends NF_Abstracts_List
 
     protected $_templates = array( 'listcountry', 'listselect' );
 
+    /**
+     * The country list, worked out once per request.
+     *
+     * Building it reads two config files, translates about 250 names and runs
+     * the `ninja_forms_config_country_list` filter. Exporting submissions asks
+     * for the list once per exported value, so a form with a Country field and
+     * a few thousand submissions used to pay that cost thousands of times over
+     * and exhaust PHP's memory before the CSV was written.
+     *
+     * @see https://github.com/Saturday-Drive/ninja-forms/issues/8388
+     * @var array<string,string>|null
+     */
+    private static $country_options = null;
+
+    /**
+     * Which callbacks were on the country-list filter when the list above was
+     * built, and under which locale.
+     *
+     * The list may only be remembered after the filter has run, so an add-on
+     * that adds, renames or removes a country still gets its way. An add-on
+     * that registers its callback after the list was first built, or a locale
+     * switch part way through the request, invalidates what was remembered.
+     *
+     * @var string|null
+     */
+    private static $country_options_built_for = null;
+
     public function __construct()
     {
         parent::__construct();
@@ -37,6 +64,9 @@ class NF_Fields_ListCountry extends NF_Abstracts_List
         add_filter( 'ninja_forms_custom_columns',                          array( $this, 'custom_columns'   ), 10, 2 );
         add_filter( 'ninja_forms_render_options_' . $this->_type,          array( $this, 'filter_options'   ), 10, 2 );
         add_filter( 'ninja_forms_subs_export_field_value_' . $this->_name, array( $this, 'filter_csv_value' ), 10, 2 );
+
+        add_action( 'switch_locale', array( __CLASS__, 'forget_country_options' ) );
+        add_action( 'restore_previous_locale', array( __CLASS__, 'forget_country_options' ) );
     }
 
     public function custom_columns( $value, $field )
@@ -77,6 +107,12 @@ class NF_Fields_ListCountry extends NF_Abstracts_List
 	 */
 	private static function country_options()
 	{
+		$built_for = self::country_options_signature();
+
+		if ( null !== self::$country_options && $built_for === self::$country_options_built_for ) {
+			return self::$country_options;
+		}
+
 		$by_code = Ninja_Forms()->config( 'CountryListByCode' );
 
 		// What the name-keyed shape looks like before anyone filters it.
@@ -88,7 +124,7 @@ class NF_Fields_ListCountry extends NF_Abstracts_List
 		$filtered = Ninja_Forms()->config( 'CountryList' );
 
 		if ( $filtered === $baseline ) {
-			return $by_code;
+			return self::remember_country_options( $by_code, $built_for );
 		}
 
 		// Both arrays lose the same entries to any name collision, so the
@@ -114,7 +150,78 @@ class NF_Fields_ListCountry extends NF_Abstracts_List
 			}
 		}
 
-		return $options;
+		return self::remember_country_options( $options, $built_for );
+	}
+
+	/**
+	 * Keep the finished list for the rest of the request.
+	 *
+	 * What is kept is always the list as it stands after
+	 * `ninja_forms_config_country_list` has run, never the shipped list on its
+	 * own, so remembering it cannot drop an add-on's change.
+	 *
+	 * @param array  $options   Country code => translated country name.
+	 * @param string $built_for The filter and locale state it was built under.
+	 * @return array Country code => translated country name.
+	 */
+	private static function remember_country_options( array $options, $built_for )
+	{
+		self::$country_options           = $options;
+		self::$country_options_built_for = $built_for;
+
+		return self::$country_options;
+	}
+
+	/**
+	 * What the remembered list depends on, besides the config files.
+	 *
+	 * The country list is only correct for the callbacks that were on
+	 * `ninja_forms_config_country_list` when it was built. An add-on that
+	 * registers its callback later in the request must not be served a list
+	 * built before it, so the registered callbacks are part of the signature.
+	 *
+	 * Nothing here calls a WordPress function: this runs on the export path
+	 * for every row and must stay cheap.
+	 *
+	 * @return string
+	 */
+	private static function country_options_signature()
+	{
+		if ( ! isset( $GLOBALS['wp_filter']['ninja_forms_config_country_list'] ) ) {
+			return '';
+		}
+
+		$hook = $GLOBALS['wp_filter']['ninja_forms_config_country_list'];
+
+		if ( ! isset( $hook->callbacks ) || ! is_array( $hook->callbacks ) ) {
+			return '';
+		}
+
+		$signature = array();
+
+		foreach ( $hook->callbacks as $priority => $callbacks ) {
+			if ( ! is_array( $callbacks ) ) {
+				continue;
+			}
+
+			$signature[] = $priority . ':' . implode( ',', array_keys( $callbacks ) );
+		}
+
+		return implode( '|', $signature );
+	}
+
+	/**
+	 * Forget the remembered list, so the next reader builds it again.
+	 *
+	 * Hooked to the locale switches, because every country name in the list is
+	 * translated.
+	 *
+	 * @return void
+	 */
+	public static function forget_country_options()
+	{
+		self::$country_options           = null;
+		self::$country_options_built_for = null;
 	}
 
 	/**

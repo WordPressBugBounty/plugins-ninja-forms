@@ -7,6 +7,26 @@ class NF_MergeTags_WP extends NF_Abstracts_MergeTags
 {
     protected $id = 'wp';
 
+    /**
+     * The post the submitted form was displayed on.
+     *
+     * NULL means no context was carried with the submission. 0 means the form
+     * was displayed somewhere that has no post of its own, such as an archive
+     * or a search results page. See issue #4028.
+     *
+     * @var int|null
+     */
+    protected $post_context_id = null;
+
+    /**
+     * Whether the view the submitted form was displayed on was the site's home
+     * page. A home page showing the latest posts has no post of its own but
+     * still has an address worth reporting. See issue #4028.
+     *
+     * @var bool
+     */
+    protected $post_context_is_home = false;
+
     public function __construct()
     {
         parent::__construct();
@@ -113,20 +133,95 @@ class NF_MergeTags_WP extends NF_Abstracts_MergeTags
         return $return;
     }
 
+    /**
+     * Record the post the submitted form was displayed on.
+     *
+     * The settings posted back with a form are client data, so the post is only
+     * accepted when it exists and this request is allowed to read it. An absent
+     * key leaves the context unset, so forms rendered before this release keep
+     * their previous behaviour. See issue #4028.
+     *
+     * @param array $submitted_settings Form settings posted back with the submission.
+     * @return void
+     */
+    public function set_post_context( $submitted_settings )
+    {
+        $this->clear_post_context();
+
+        if ( ! is_array( $submitted_settings ) || ! isset( $submitted_settings[ 'nf_post_context_id' ] ) ) {
+            return;
+        }
+
+        // From here on the form has told us where it was displayed, even when
+        // the answer is "nowhere with a post of its own".
+        $this->post_context_id      = 0;
+        $this->post_context_is_home = ! empty( $submitted_settings[ 'nf_post_context_is_home' ] );
+
+        $post_id = absint( $submitted_settings[ 'nf_post_context_id' ] );
+
+        if ( ! $post_id ) {
+            return;
+        }
+
+        $post = get_post( $post_id );
+
+        if ( ! $post ) {
+            return;
+        }
+
+        $publicly_viewable = function_exists( 'is_post_publicly_viewable' )
+            ? is_post_publicly_viewable( $post )
+            : ( 'publish' === $post->post_status );
+
+        if ( ! $publicly_viewable && ! current_user_can( 'read_post', $post->ID ) ) {
+            return;
+        }
+
+        $this->post_context_id = (int) $post->ID;
+    }
+
+    /**
+     * Forget any post context carried from a previous submission.
+     *
+     * @return void
+     */
+    public function clear_post_context()
+    {
+        $this->post_context_id      = null;
+        $this->post_context_is_home = false;
+    }
+
+    /**
+     * Whether the submission told us which post the form was displayed on.
+     *
+     * @return bool
+     */
+    protected function has_post_context()
+    {
+        return null !== $this->post_context_id;
+    }
+
     protected function post_id()
     {
         global $post;
 
+        if ( $this->has_post_context() ) {
+            // The form told us where it was displayed, and that answer is
+            // final. A view with no post of its own must not borrow another
+            // post's data. See issue #4028.
+            return $this->post_context_id ? $this->post_context_id : '';
+        }
+
         if ( is_admin() && defined( 'DOING_AJAX' ) && DOING_AJAX ) {
-            // If we are doing AJAX, use the referer to get the Post ID.
+            // No context was carried, so fall back to the referer.
             $post_id = $this->viewable_referer_post_id( url_to_postid( wp_get_referer() ) );
         } elseif( $post ) {
             $post_id = $post->ID;
         } else {
-            return false; // No Post ID found.
+            return ''; // No Post ID found.
         }
 
-        return $post_id;
+        return $post_id ? $post_id : '';
     }
 
     protected function post_title()
@@ -145,6 +240,14 @@ class NF_MergeTags_WP extends NF_Abstracts_MergeTags
         }
 
         $post_id = $this->post_id();
+
+        if ( ! $post_id && $this->has_post_context() ) {
+            // The form was displayed on a view with no post of its own. Only
+            // the site's home page has an address worth reporting; an archive
+            // or a search result has none. See issue #4028.
+            return $this->post_context_is_home ? home_url( '/' ) : '';
+        }
+
         if ( ! $post_id && is_admin() && wp_doing_ajax() ) {
             // A latest-posts homepage has no post ID to recover from the referer.
             $referer = wp_get_referer();

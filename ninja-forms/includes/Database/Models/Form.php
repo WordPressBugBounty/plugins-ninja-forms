@@ -129,7 +129,53 @@ final class NF_Database_Models_Form extends NF_Abstracts_Model
 		return $sql;
 	}
 
+    /**
+     * Sequence numbers handed out before the submission row exists, keyed by
+     * form ID. A submission's file name is built while its fields are
+     * processed, which is before the submission is saved, so the number has to
+     * be claimed then and reused by the save. See issue #6859.
+     *
+     * @var array
+     */
+    protected static $reserved_sub_seq = array();
+
+    /**
+     * Claim this submission's sequence number before the submission is saved.
+     *
+     * Repeated calls within one request return the same number, so every merge
+     * tag in one submission sees the number the stored entry will keep.
+     *
+     * @param string|int $form_id Form ID.
+     * @return int The claimed sequence number.
+     */
+    public static function reserve_sub_seq( $form_id )
+    {
+        if ( ! isset( self::$reserved_sub_seq[ $form_id ] ) ) {
+            self::$reserved_sub_seq[ $form_id ] = self::increment_sub_seq( $form_id );
+        }
+
+        return self::$reserved_sub_seq[ $form_id ];
+    }
+
     public static function get_next_sub_seq( $form_id )
+    {
+        if ( isset( self::$reserved_sub_seq[ $form_id ] ) ) {
+            $reserved = self::$reserved_sub_seq[ $form_id ];
+            unset( self::$reserved_sub_seq[ $form_id ] );
+
+            return $reserved;
+        }
+
+        return self::increment_sub_seq( $form_id );
+    }
+
+    /**
+     * Advance the form's sequence counter and return the number taken.
+     *
+     * @param string|int $form_id Form ID.
+     * @return int
+     */
+    protected static function increment_sub_seq( $form_id )
     {
         global $wpdb;
 

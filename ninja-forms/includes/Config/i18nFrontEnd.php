@@ -119,6 +119,22 @@ return apply_filters( 'ninja_forms_i18n_front_end', array(
     'recaptchaConsentMissing'               =>  esc_html__( 'reCAPTCHA validation couldn\'t load.', 'ninja-forms' ),
     'recaptchaMissingCookie'                =>  esc_html__( "reCaptcha v3 validation couldn't load the cookie needed to submit the form.", 'ninja-forms' ),
     'recaptchaConsentEvent'                 =>  esc_html__( 'Accept reCAPTCHA cookies before sending the form.', 'ninja-forms' ),
+    /*
+     * Shown when Google refuses to run an Invisible reCAPTCHA v2 widget. Google
+     * issues separate v2 keys for the "I'm not a robot" checkbox and for
+     * Invisible reCAPTCHA, and a checkbox key set to Invisible is rejected, so
+     * no token is ever produced and the form can never be submitted.
+     *
+     * Only someone who can manage forms can put this right, so they are the
+     * only ones shown the diagnosis. Everyone else is told the form cannot be
+     * sent without being asked to correct anything, because nothing they
+     * entered is wrong. Google reports the refusal through the same callback
+     * as a transient failure to reach it, so the first sentence of each stays
+     * true either way and the manager's second sentence names the check that
+     * resolves the common cause. See issue #7820.
+     */
+    'recaptchaUnavailable'                  =>  esc_html__( 'reCAPTCHA could not load, so this form can\'t be sent right now. Please try again later.', 'ninja-forms' ),
+    'recaptchaUnavailableManager'           =>  esc_html__( 'reCAPTCHA could not load. Check that the reCAPTCHA v2 site key saved in Ninja Forms is enabled for Invisible reCAPTCHA.', 'ninja-forms' ),
     'hourPlaceholder'                       => esc_html__( 'Hour', 'ninja-forms' ),
     'minutePlaceholder'                     => esc_html__( 'Minute', 'ninja-forms' ),
     'am'                                    => esc_html__( 'AM', 'ninja-forms' ),

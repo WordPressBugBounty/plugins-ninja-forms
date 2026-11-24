@@ -22,8 +22,7 @@ class NF_Display_Preview
     remove_filter('the_excerpt', 'wpautop');
     add_filter('the_content', array($this, 'the_content'), 9001);
     add_filter('get_the_excerpt', array($this, 'the_content'));
-    //switched from template_include to template redirect filter hook to work with block-based (FSE) themes
-    add_filter('template_redirect', array($this, 'template_include'));
+    add_filter('template_include', array($this, 'template_include'));
 
     add_filter('post_thumbnail_html', array($this, 'post_thumbnail_html'));
   }
@@ -179,16 +178,29 @@ class NF_Display_Preview
   }
 
   /**
-   * Locate_template will be loaded using second argument of the get_query_templates() function
-   * First argument will be prefixed with _template to create a hook
-   * @return void
+   * Supply the template the form preview is rendered with.
+   *
+   * Hooked to template_include, so WordPress performs the include itself and
+   * the rest of the render still runs. Ending the request here instead - which
+   * is what this did between 3.6.10 and the fix for issue #7878 - skips every
+   * later stage, and a theme that builds part of its layout in that stage, such
+   * as Divi, is left with a header and an empty body.
+   *
+   * get_query_template() resolves block templates as well as classic ones, so a
+   * block (FSE) theme receives the same template WordPress would have chosen for
+   * it. That is what the 3.6.10 change needed and what locate_template(), used
+   * here before it, could not give.
+   *
+   * @param string $template The template WordPress resolved.
+   * @return string
    */
-    function template_include()
+    function template_include( $template )
     {
       $templates = array( 'page.php', 'single.php', 'index.php');
-      include( get_query_template('ninja-forms', $templates) );
 
-      exit;
+      $preview_template = get_query_template('ninja-forms', $templates);
+
+      return $preview_template ? $preview_template : $template;
     }
 
     function post_thumbnail_html() {
